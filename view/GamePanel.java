@@ -117,23 +117,23 @@ public class GamePanel extends JPanel implements ActionListener {
     
     private void loadSounds() {
         try {
-            // Load background music
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(new File("sounds/game_soundtrack.wav"));
+            // Load background music (ingame music)
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(new File("assets/sound ingame.mp3"));
             backgroundMusic = AudioSystem.getClip();
             backgroundMusic.open(audioStream);
             
             // Load achievement sound (heart reaching girl)
-            audioStream = AudioSystem.getAudioInputStream(new File("sounds/game_bonus.wav"));
+            audioStream = AudioSystem.getAudioInputStream(new File("assets/sound achivement.mp3"));
             achievementSound = AudioSystem.getClip();
             achievementSound.open(audioStream);
             
             // Load game over sound
-            audioStream = AudioSystem.getAudioInputStream(new File("sounds/game_over.wav"));
+            audioStream = AudioSystem.getAudioInputStream(new File("assets/sound berubah.mp3"));
             gameOverSound = AudioSystem.getClip();
             gameOverSound.open(audioStream);
             
             // Load game start sound
-            audioStream = AudioSystem.getAudioInputStream(new File("sounds/game_start.wav"));
+            audioStream = AudioSystem.getAudioInputStream(new File("assets/sound game start.mp3"));
             gameStartSound = AudioSystem.getClip();
             gameStartSound.open(audioStream);
             
@@ -284,16 +284,8 @@ public class GamePanel extends JPanel implements ActionListener {
             int currentEmotionState = gameEngine.getEmotionState();
             if (currentEmotionState != lastEmotionState) {
                 // Play sound effects for reaching score milestones
-                switch (currentEmotionState) {
-                    case 1: // Score >= 30
-                        // Could play special sound here if available
-                        break;
-                    case 2: // Score >= 50
-                        // Could play special sound here if available
-                        break;
-                    case 3: // Score >= 100
-                        // Could play special sound here if available
-                        break;
+                if (currentEmotionState > lastEmotionState) {
+                    playSound(gameOverSound); // Use the "sound berubah.mp3" when emotion changes
                 }
                 lastEmotionState = currentEmotionState;
             }
@@ -311,16 +303,20 @@ public class GamePanel extends JPanel implements ActionListener {
             // Repaint
             repaint();
         } else {
-            // Game is over, stop timer and return to menu
+            // Game is over, stop timer and stop background music
             stopBackgroundMusic();
             playSound(gameOverSound);
             gameTimer.stop();
+            
+            // Game ended - automatically save the results to database
+            // This happens automatically in GameEngine.endGame(), which was called when time ran out
             
             // Show final score before returning to menu
             JFrame gameFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
             JOptionPane.showMessageDialog(gameFrame, 
                 "Time's up! Your final score: " + gameEngine.getScore() + 
-                "\nHearts collected: " + gameEngine.getHeartsCollected(),
+                "\nHearts collected: " + gameEngine.getHeartsCollected() +
+                "\n\nYour result has been saved to database!",
                 "Game Over", 
                 JOptionPane.INFORMATION_MESSAGE);
             

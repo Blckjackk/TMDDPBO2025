@@ -44,7 +44,19 @@ public class GameEngine {
     public GameEngine() {
         random = new Random();
         hearts = new ArrayList<>();
-        databaseManager = DatabaseManager.getInstance();
+        
+        // Initialize database manager
+        try {
+            databaseManager = DatabaseManager.getInstance();
+            if (databaseManager == null) {
+                System.out.println("Warning: Failed to initialize database manager in GameEngine");
+            } else {
+                System.out.println("Database manager initialized successfully in GameEngine");
+            }
+        } catch (Exception e) {
+            System.out.println("Error initializing database manager in GameEngine: " + e.getMessage());
+            e.printStackTrace();
+        }
         
         // Initialize game state
         reset();
@@ -92,8 +104,21 @@ public class GameEngine {
             isRunning = false;
             // Save result to database
             if (currentUsername != null && !currentUsername.isEmpty()) {
-                PlayerResult result = new PlayerResult(currentUsername, score, heartsCollected);
-                databaseManager.savePlayerResult(result);
+                try {
+                    System.out.println("Saving result to database for " + currentUsername + 
+                                       " - Score: " + score + ", Hearts: " + heartsCollected);
+                    PlayerResult result = new PlayerResult(currentUsername, score, heartsCollected);
+                    
+                    if (databaseManager != null) {
+                        databaseManager.savePlayerResult(result);
+                        System.out.println("Result saved successfully!");
+                    } else {
+                        System.out.println("Warning: Database manager is null, can't save result");
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error saving result: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
         }
     }

@@ -5,5 +5,8 @@
     <mapping directory="$PROJECT_DIR$/Contoh/05_Database/TP5DPBO2025C2" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Contoh/05_Database/TP5DPBO2025C2/TP5DPBO2025C2" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Contoh/06_FlapyBird/flapybird" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup/Contoh/05_Database/TP5DPBO2025C2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup/Contoh/05_Database/TP5DPBO2025C2/TP5DPBO2025C2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup/Contoh/06_FlapyBird/flapybird" vcs="Git" />
   </component>
 </project>

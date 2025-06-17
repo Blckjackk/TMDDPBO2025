@@ -31,6 +31,17 @@ public class Main {
             }
         }
         
+        // Initialize DatabaseManager early to ensure database is created
+        try {
+            DatabaseManager dbManager = DatabaseManager.getInstance();
+            if (dbManager != null) {
+                dbManager.initializeDatabase();
+                System.out.println("Database initialized in main application");
+            }
+        } catch (Exception e) {
+            System.out.println("Error initializing database in main: " + e.getMessage());
+        }
+        
         // Start application on Swing Event Dispatch Thread
         SwingUtilities.invokeLater(new Runnable() {
             @Override

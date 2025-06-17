@@ -87,6 +87,7 @@ public class MainMenuView extends JFrame {
             databaseManager = DatabaseManager.getInstance();
             if (databaseManager != null) {
                 databaseManager.initializeDatabase();
+                System.out.println("Database initialized successfully in MainMenuView");
             } else {
                 showDatabaseError("Failed to initialize database connection.");
             }
@@ -98,11 +99,14 @@ public class MainMenuView extends JFrame {
         // Set up UI components
         initializeComponents();
         
-        // Load scores
+        // Load scores from database
         loadScores();
         
         // Display the frame
         setVisible(true);
+        
+        // Print message indicating MainMenuView is fully loaded
+        System.out.println("MainMenuView is fully loaded and visible");
     }
     
     private void loadImages() {
@@ -346,6 +350,15 @@ public class MainMenuView extends JFrame {
             }
             
             System.out.println("Loaded " + results.size() + " scores from database");
+            
+            // If no results, add a message row
+            if (results.size() == 0) {
+                tableModel.addRow(new Object[]{
+                        "No scores yet...",
+                        "",
+                        ""
+                });
+            }
         } catch (Exception e) {
             System.out.println("Error loading scores: " + e.getMessage());
             e.printStackTrace();
@@ -375,6 +388,21 @@ public class MainMenuView extends JFrame {
     
     // Method to refresh scores when returning from game
     public void refreshScores() {
-        loadScores();
+        System.out.println("Refreshing scores in MainMenuView...");
+        if (databaseManager != null) {
+            loadScores();
+        } else {
+            System.out.println("Cannot refresh scores - database manager is null");
+            try {
+                // Try to re-initialize database connection
+                databaseManager = DatabaseManager.getInstance();
+                if (databaseManager != null) {
+                    System.out.println("Re-established database connection, loading scores...");
+                    loadScores();
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to re-initialize database: " + e.getMessage());
+            }
+        }
     }
 }
