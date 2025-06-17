@@ -25,6 +25,7 @@ public class GameEngine {
     private long startTime;
     private long timeRemaining;
     private boolean facingRight; // For character direction
+    private boolean girlFacingRight; // Direction for girl character
     private int emotionState; // 0=normal, 1=happy, 2=excited, 3=laughing
     private boolean heartReachedGirl; // Flag for playing achievement sound
     
@@ -69,6 +70,7 @@ public class GameEngine {
         heartsCollected = 0;
         timeRemaining = GAME_DURATION_MS;
         facingRight = true;
+        girlFacingRight = true;
         emotionState = 0;
         heartReachedGirl = false;
         
@@ -102,23 +104,38 @@ public class GameEngine {
     public void endGame() {
         if (isRunning) {
             isRunning = false;
+            
             // Save result to database
             if (currentUsername != null && !currentUsername.isEmpty()) {
                 try {
                     System.out.println("Saving result to database for " + currentUsername + 
                                        " - Score: " + score + ", Hearts: " + heartsCollected);
-                    PlayerResult result = new PlayerResult(currentUsername, score, heartsCollected);
+                    
+                    // Make sure database manager is initialized
+                    if (databaseManager == null) {
+                        System.out.println("Database manager was null, getting instance now");
+                        databaseManager = DatabaseManager.getInstance();
+                    }
                     
                     if (databaseManager != null) {
+                        // Initialize database if needed
+                        databaseManager.initializeDatabase();
+                        
+                        // Create player result and save it
+                        PlayerResult result = new PlayerResult(currentUsername, score, heartsCollected);
+                          // Call the savePlayerResult method
                         databaseManager.savePlayerResult(result);
-                        System.out.println("Result saved successfully!");
+                        System.out.println("Attempted to save result to database for " + 
+                                        currentUsername + " with score " + score);
                     } else {
-                        System.out.println("Warning: Database manager is null, can't save result");
+                        System.out.println("Error: Database manager is still null, can't save result");
                     }
                 } catch (Exception e) {
-                    System.out.println("Error saving result: " + e.getMessage());
+                    System.out.println("Error saving result to database: " + e.getMessage());
                     e.printStackTrace();
                 }
+            } else {
+                System.out.println("Cannot save result: username is empty");
             }
         }
     }
@@ -150,6 +167,13 @@ public class GameEngine {
         
         // Reset heart reached flag
         heartReachedGirl = false;
+        
+        // Update girl facing direction - make her face towards player
+        if (playerPosition.x < girlPosition.x) {
+            girlFacingRight = false; // Player is to the left, girl faces left
+        } else {
+            girlFacingRight = true;  // Player is to the right, girl faces right
+        }
         
         // Update hearts
         for (int i = hearts.size() - 1; i >= 0; i--) {
@@ -207,16 +231,24 @@ public class GameEngine {
         // Determine spawn position and direction
         boolean fromTop = random.nextBoolean();
         int x, y, speedX;
+        int middleAreaHeight = 200; // Height of middle area to avoid
+        int middleAreaTop = (SCREEN_HEIGHT / 2) - (middleAreaHeight / 2);
         
         if (fromTop) {
             // From top: right to left
             x = SCREEN_WIDTH + 30;
-            y = random.nextInt(SCREEN_HEIGHT / 2) + 50;
+            
+            // Spawn in top third of screen, avoid middle area
+            y = random.nextInt(middleAreaTop - 100) + 50; // Keep hearts higher up
+            
             speedX = -random.nextInt(HEART_SPEED_MAX - HEART_SPEED_MIN + 1) - HEART_SPEED_MIN;
         } else {
             // From bottom: left to right
             x = -30;
-            y = random.nextInt(SCREEN_HEIGHT / 2) + SCREEN_HEIGHT / 2 - 50;
+            
+            // Spawn in bottom third of screen, avoid middle area
+            y = random.nextInt(middleAreaTop - 100) + middleAreaTop + middleAreaHeight; // Keep hearts lower down
+            
             speedX = random.nextInt(HEART_SPEED_MAX - HEART_SPEED_MIN + 1) + HEART_SPEED_MIN;
         }
         
@@ -231,6 +263,7 @@ public class GameEngine {
             default: points = 2; break; // Purple
         }
         
+        System.out.println("Spawning heart at position: (" + x + ", " + y + ")");
         hearts.add(new Heart(new Point(x, y), speedX, type, points));
     }
     
@@ -262,6 +295,16 @@ public class GameEngine {
             playerPosition.x = newX;
             playerPosition.y = newY;
         }
+    }
+      // Setter methods for continuing a game with previous score
+    public void setScore(int score) {
+        System.out.println("Setting score to: " + score);
+        this.score = score;
+    }
+    
+    public void setHeartsCollected(int heartsCollected) {
+        System.out.println("Setting hearts collected to: " + heartsCollected);
+        this.heartsCollected = heartsCollected;
     }
     
     // Getters
@@ -309,6 +352,10 @@ public class GameEngine {
         boolean result = heartReachedGirl;
         heartReachedGirl = false; // Reset after reading
         return result;
+    }
+    
+    public boolean isGirlFacingRight() {
+        return girlFacingRight;
     }
     
     // Inner class for Heart object
@@ -392,13 +439,16 @@ public class GameEngine {
             lifetime++;
             
             if (extending) {
-                // Move toward target position
+                // Move toward target position - FASTER SPEED
                 double dx = targetPosition.x - currentPosition.x;
                 double dy = targetPosition.y - currentPosition.y;
                 double distance = Math.sqrt(dx * dx + dy * dy);
                 
-                if (distance > 10) {
-                    double ratio = 10 / distance;
+                // Increase speed from 10 to 15-20
+                double speed = 18.0;
+                
+                if (distance > speed) {
+                    double ratio = speed / distance;
                     currentPosition.x += dx * ratio;
                     currentPosition.y += dy * ratio;
                 } else {
@@ -407,13 +457,16 @@ public class GameEngine {
                     retracting = true;
                 }
             } else if (retracting) {
-                // Move back to start position
+                // Move back to start position - FASTER SPEED
                 double dx = startPosition.x - currentPosition.x;
                 double dy = startPosition.y - currentPosition.y;
                 double distance = Math.sqrt(dx * dx + dy * dy);
                 
-                if (distance > 10) {
-                    double ratio = 10 / distance;
+                // Increase return speed from 10 to 15-20
+                double speed = 18.0;
+                
+                if (distance > speed) {
+                    double ratio = speed / distance;
                     currentPosition.x += dx * ratio;
                     currentPosition.y += dy * ratio;
                 } else {

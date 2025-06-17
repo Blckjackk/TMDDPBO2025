@@ -115,9 +115,7 @@ public class DatabaseManager {
         }
         
         return results;
-    }
-
-    // Save player result (insert new or update if exists)
+    }    // Save player result (insert new or update if exists)
     public void savePlayerResult(PlayerResult playerResult) {
         if (connection == null) {
             System.out.println("Cannot save result - no connection available");
@@ -132,14 +130,28 @@ public class DatabaseManager {
             ResultSet rs = statement.executeQuery();
             
             if (rs.next()) {
-                // Update existing record
-                String updateQuery = "UPDATE thasil SET skor = ?, count = ? WHERE username = ?";
-                statement = connection.prepareStatement(updateQuery);
-                statement.setInt(1, playerResult.getSkor());
-                statement.setInt(2, playerResult.getCount());
-                statement.setString(3, playerResult.getUsername());
-                statement.executeUpdate();
-                System.out.println("Updated existing player record: " + playerResult.getUsername());
+                // Get existing score and hearts
+                int existingSkor = rs.getInt("skor");
+                int existingCount = rs.getInt("count");
+                
+                // Only update if new score is higher
+                if (playerResult.getSkor() > existingSkor) {
+                    // Update existing record with higher score
+                    String updateQuery = "UPDATE thasil SET skor = ?, count = ? WHERE username = ?";
+                    statement = connection.prepareStatement(updateQuery);
+                    statement.setInt(1, playerResult.getSkor());
+                    statement.setInt(2, playerResult.getCount());
+                    statement.setString(3, playerResult.getUsername());
+                    int rowsAffected = statement.executeUpdate();
+                    System.out.println("Updated existing player record: " + playerResult.getUsername() + 
+                                     " with higher score: " + playerResult.getSkor() + 
+                                     " (old: " + existingSkor + ")");
+                } else {
+                    // No update needed
+                    System.out.println("No update needed for player: " + playerResult.getUsername() + 
+                                     " - Current score: " + existingSkor + 
+                                     " is better than new score: " + playerResult.getSkor());
+                }
             } else {
                 // Insert new record
                 String insertQuery = "INSERT INTO thasil (username, skor, count) VALUES (?, ?, ?)";
@@ -147,8 +159,9 @@ public class DatabaseManager {
                 statement.setString(1, playerResult.getUsername());
                 statement.setInt(2, playerResult.getSkor());
                 statement.setInt(3, playerResult.getCount());
-                statement.executeUpdate();
-                System.out.println("Inserted new player record: " + playerResult.getUsername());
+                int rowsAffected = statement.executeUpdate();
+                System.out.println("Inserted new player record: " + playerResult.getUsername() + 
+                                 " with score: " + playerResult.getSkor());
             }
         } catch (SQLException e) {
             System.out.println("Error saving player result: " + e.getMessage());

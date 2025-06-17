@@ -2,6 +2,7 @@ package view;
 
 import viewmodel.GameEngine;
 import viewmodel.InputController;
+import model.AudioPlayer;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import javax.sound.sampled.*;
 import java.io.File;
+import java.lang.reflect.Method;
 
 public class GamePanel extends JPanel implements ActionListener {
     // Constants
@@ -34,20 +36,12 @@ public class GamePanel extends JPanel implements ActionListener {
     private HashMap<Integer, BufferedImage> heartImages;
     private BufferedImage ropeImage;
     
-    // Sound effects
-    private Clip backgroundMusic;
-    private Clip achievementSound;
-    private Clip gameOverSound;
-    private Clip gameStartSound;
-    private Clip level30Sound;
-    private Clip level50Sound;
-    private Clip level100Sound;
+    // Last emotion state for sound effects
     private int lastEmotionState = -1;
     
     // Flag to track if achievement sound was recently played
     private long lastAchievementSoundTime = 0;
-    
-    public GamePanel(GameEngine gameEngine, MainMenuView mainMenuView) {
+      public GamePanel(GameEngine gameEngine, MainMenuView mainMenuView) {
         this.gameEngine = gameEngine;
         this.mainMenuView = mainMenuView;
         
@@ -58,6 +52,9 @@ public class GamePanel extends JPanel implements ActionListener {
         // Load assets
         loadImages();
         loadSounds();
+        
+        // Call this method to verify GameEngine methods are available
+        ensureGameEngineMethods();
         
         // Set up input controller
         inputController = new InputController(gameEngine);
@@ -78,8 +75,8 @@ public class GamePanel extends JPanel implements ActionListener {
         gameTimer.start();
         
         // Play start sound and background music
-        playSound(gameStartSound);
-        playBackgroundMusic();
+        playSound("game_start");
+        loopSound("ingame");
     }
     
     private void loadImages() {
@@ -117,48 +114,134 @@ public class GamePanel extends JPanel implements ActionListener {
     
     private void loadSounds() {
         try {
-            // Load background music (ingame music)
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(new File("assets/sound ingame.mp3"));
-            backgroundMusic = AudioSystem.getClip();
-            backgroundMusic.open(audioStream);
+            // Use the AudioPlayer singleton
+            AudioPlayer audioPlayer = AudioPlayer.getInstance();
             
-            // Load achievement sound (heart reaching girl)
-            audioStream = AudioSystem.getAudioInputStream(new File("assets/sound achivement.mp3"));
-            achievementSound = AudioSystem.getClip();
-            achievementSound.open(audioStream);
-            
-            // Load game over sound
-            audioStream = AudioSystem.getAudioInputStream(new File("assets/sound berubah.mp3"));
-            gameOverSound = AudioSystem.getClip();
-            gameOverSound.open(audioStream);
-            
-            // Load game start sound
-            audioStream = AudioSystem.getAudioInputStream(new File("assets/sound game start.mp3"));
-            gameStartSound = AudioSystem.getClip();
-            gameStartSound.open(audioStream);
+            // AudioPlayer loads all sounds during initialization
+            // No need to load them here again
+            System.out.println("Audio system initialized");
             
         } catch (Exception e) {
-            System.out.println("Error loading sounds: " + e.getMessage());
+            System.out.println("Error initializing audio system: " + e.getMessage());
             e.printStackTrace();
         }
     }
+      // Helper method to play a sound once
+    private void playSound(String name) {
+        try {
+            AudioPlayer audioPlayer = AudioPlayer.getInstance();
+            audioPlayer.playSound(name);
+        } catch (Exception e) {
+            System.out.println("Error in playSound: " + e.getMessage());
+        }
+    }
     
-    private void playSound(Clip clip) {
-        if (clip != null) {
-            clip.setFramePosition(0);
-            clip.start();
+    // Helper method to loop a sound continuously
+    private void loopSound(String name) {
+        try {
+            AudioPlayer audioPlayer = AudioPlayer.getInstance();
+            audioPlayer.loopSound(name);
+        } catch (Exception e) {
+            System.out.println("Error in loopSound: " + e.getMessage());
+        }
+    }
+    
+    // Helper method to stop a specific sound
+    private void stopSound(String name) {
+        try {
+            AudioPlayer audioPlayer = AudioPlayer.getInstance();
+            audioPlayer.stopSound(name);
+        } catch (Exception e) {
+            System.out.println("Error in stopSound: " + e.getMessage());
+        }
+    }
+    
+    // Helper method to stop all sounds
+    private void stopAllSounds() {
+        try {
+            AudioPlayer audioPlayer = AudioPlayer.getInstance();
+            audioPlayer.stopAllSounds();
+        } catch (Exception e) {
+            System.out.println("Error in stopAllSounds: " + e.getMessage());
         }
     }
     
     private void playBackgroundMusic() {
-        if (backgroundMusic != null) {
-            backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
-        }
+        // Use AudioPlayer to loop the background music
+        loopSound("ingame");
     }
     
     private void stopBackgroundMusic() {
-        if (backgroundMusic != null) {
-            backgroundMusic.stop();
+        // Use AudioPlayer to stop the background music
+        AudioPlayer.getInstance().stopSound("ingame");
+    }
+    
+    // Helper method to ensure GameEngine methods are accessible
+    private void ensureGameEngineMethods() {
+        try {
+            // Use reflection to check if methods exist
+            Class<?> engineClass = gameEngine.getClass();
+            
+            Method isGirlFacingRightMethod = engineClass.getMethod("isGirlFacingRight");
+            Method isHeartReachedGirlMethod = engineClass.getMethod("isHeartReachedGirl");
+            Method getEmotionStateMethod = engineClass.getMethod("getEmotionState");
+            Method isFacingRightMethod = engineClass.getMethod("isFacingRight");
+            Method getTimeRemainingMethod = engineClass.getMethod("getTimeRemaining");
+            
+            System.out.println("All required GameEngine methods are accessible");
+        } catch (Exception e) {
+            System.out.println("Error checking GameEngine methods: " + e.getMessage());
+        }
+    }
+    
+    // Wrapper methods to access GameEngine methods via reflection
+    private boolean isGirlFacingRight() {
+        try {
+            Method method = gameEngine.getClass().getMethod("isGirlFacingRight");
+            return (boolean) method.invoke(gameEngine);
+        } catch (Exception e) {
+            System.out.println("Error in isGirlFacingRight: " + e.getMessage());
+            return true; // Default value
+        }
+    }
+    
+    private boolean isHeartReachedGirl() {
+        try {
+            Method method = gameEngine.getClass().getMethod("isHeartReachedGirl");
+            return (boolean) method.invoke(gameEngine);
+        } catch (Exception e) {
+            System.out.println("Error in isHeartReachedGirl: " + e.getMessage());
+            return false; // Default value
+        }
+    }
+    
+    private int getEmotionState() {
+        try {
+            Method method = gameEngine.getClass().getMethod("getEmotionState");
+            return (int) method.invoke(gameEngine);
+        } catch (Exception e) {
+            System.out.println("Error in getEmotionState: " + e.getMessage());
+            return 0; // Default value
+        }
+    }
+    
+    private boolean isFacingRight() {
+        try {
+            Method method = gameEngine.getClass().getMethod("isFacingRight");
+            return (boolean) method.invoke(gameEngine);
+        } catch (Exception e) {
+            System.out.println("Error in isFacingRight: " + e.getMessage());
+            return true; // Default value
+        }
+    }
+    
+    private long getTimeRemaining() {
+        try {
+            Method method = gameEngine.getClass().getMethod("getTimeRemaining");
+            return (long) method.invoke(gameEngine);
+        } catch (Exception e) {
+            System.out.println("Error in getTimeRemaining: " + e.getMessage());
+            return 0; // Default value
         }
     }
     
@@ -215,7 +298,18 @@ public class GamePanel extends JPanel implements ActionListener {
             // Draw girl (target for hearts)
             Point girlPos = gameEngine.getGirlPosition();
             if (girlImage != null) {
-                g2d.drawImage(girlImage, girlPos.x - 40, girlPos.y - 50, 80, 100, null);
+                // Check girl facing direction
+                if (!isGirlFacingRight()) {
+                    // Draw mirrored image for girl facing left
+                    g2d.translate(girlPos.x, girlPos.y);
+                    g2d.scale(-1, 1);
+                    g2d.drawImage(girlImage, -40, -50, 80, 100, null);
+                    g2d.scale(-1, 1);
+                    g2d.translate(-girlPos.x, -girlPos.y);
+                } else {
+                    // Draw normal image
+                    g2d.drawImage(girlImage, girlPos.x - 40, girlPos.y - 50, 80, 100, null);
+                }
             } else {
                 // Fallback girl drawing
                 g2d.setColor(Color.PINK);
@@ -225,12 +319,12 @@ public class GamePanel extends JPanel implements ActionListener {
             // Draw player (Azzam) with correct emotion and direction
             Point playerPos = gameEngine.getPlayerPosition();
             if (playerImages != null) {
-                int emotionState = gameEngine.getEmotionState();
+                int emotionState = getEmotionState();
                 BufferedImage playerImage = playerImages[emotionState];
                 
                 if (playerImage != null) {
                     // Check if we need to mirror the image
-                    if (!gameEngine.isFacingRight()) {
+                    if (!isFacingRight()) {
                         // Draw mirrored image
                         g2d.translate(playerPos.x, playerPos.y);
                         g2d.scale(-1, 1);
@@ -249,7 +343,7 @@ public class GamePanel extends JPanel implements ActionListener {
             }
             
             // Draw timer
-            long timeRemaining = gameEngine.getTimeRemaining();
+            long timeRemaining = getTimeRemaining();
             int seconds = (int)(timeRemaining / 1000);
             int milliseconds = (int)(timeRemaining % 1000 / 10);
             
@@ -281,21 +375,21 @@ public class GamePanel extends JPanel implements ActionListener {
             gameEngine.update();
             
             // Check for emotion state change for sound effects
-            int currentEmotionState = gameEngine.getEmotionState();
+            int currentEmotionState = getEmotionState();
             if (currentEmotionState != lastEmotionState) {
                 // Play sound effects for reaching score milestones
                 if (currentEmotionState > lastEmotionState) {
-                    playSound(gameOverSound); // Use the "sound berubah.mp3" when emotion changes
+                    playSound("character_change"); // Use the "sound berubah.mp3" when emotion changes
                 }
                 lastEmotionState = currentEmotionState;
             }
             
             // Check if a heart has reached the girl (for achievement sound)
-            if (gameEngine.isHeartReachedGirl()) {
+            if (isHeartReachedGirl()) {
                 // Don't play achievement sounds too close together
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - lastAchievementSoundTime > 500) { // 500ms cooldown
-                    playSound(achievementSound);
+                    playSound("achievement");
                     lastAchievementSoundTime = currentTime;
                 }
             }
@@ -305,7 +399,7 @@ public class GamePanel extends JPanel implements ActionListener {
         } else {
             // Game is over, stop timer and stop background music
             stopBackgroundMusic();
-            playSound(gameOverSound);
+            playSound("character_change"); // Use as game over sound
             gameTimer.stop();
             
             // Game ended - automatically save the results to database

@@ -29,6 +29,7 @@ public class MainMenuView extends JFrame {
     private JLabel titleLabel;
     private JLabel usernameLabel;
     private JLabel scoreLabel;
+    private JComboBox<String> playerSelector;
     
     // Images
     private BufferedImage backgroundImage;
@@ -38,6 +39,10 @@ public class MainMenuView extends JFrame {
     
     // Database manager
     private DatabaseManager databaseManager;
+    
+    // For continuing with previous player data
+    private int continuedScore = 0;
+    private int continuedHearts = 0;
     
     // Background Panel with image
     class BackgroundPanel extends JPanel {
@@ -169,6 +174,32 @@ public class MainMenuView extends JFrame {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         titlePanel.add(titleLabel);
         
+        // Player selector panel
+        JPanel selectorPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        selectorPanel.setOpaque(false);
+        
+        JLabel selectorLabel = new JLabel("Select Player:");
+        selectorLabel.setFont(new Font("Comic Sans MS", Font.BOLD, 16));
+        selectorLabel.setForeground(new Color(75, 0, 130)); // Indigo
+        
+        playerSelector = new JComboBox<>();
+        playerSelector.setFont(new Font("Arial", Font.PLAIN, 14));
+        playerSelector.setPreferredSize(new Dimension(200, 30));
+        
+        // Load player names from database
+        loadPlayerNames();
+        
+        // Add action listener to player selector
+        playerSelector.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loadSelectedPlayerData();
+            }
+        });
+        
+        selectorPanel.add(selectorLabel);
+        selectorPanel.add(playerSelector);
+        
         // Input panel for username with styled components
         JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         inputPanel.setOpaque(false);
@@ -186,7 +217,7 @@ public class MainMenuView extends JFrame {
         
         inputPanel.add(usernameLabel);
         inputPanel.add(usernameField);
-        
+
         // Button panel with styled buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 5));
         buttonPanel.setOpaque(false);
@@ -275,6 +306,7 @@ public class MainMenuView extends JFrame {
         JPanel topContentPanel = new JPanel(new GridLayout(3, 1, 5, 15));
         topContentPanel.setOpaque(false);
         topContentPanel.add(titlePanel);
+        topContentPanel.add(selectorPanel);
         topContentPanel.add(inputPanel);
         topContentPanel.add(buttonPanel);
         
@@ -359,10 +391,28 @@ public class MainMenuView extends JFrame {
                         ""
                 });
             }
+            
+            // Update player selector dropdown
+            updatePlayerSelector(results);
         } catch (Exception e) {
             System.out.println("Error loading scores: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    
+    private void updatePlayerSelector(ArrayList<PlayerResult> results) {
+        // Clear existing items
+        playerSelector.removeAllItems();
+        
+        // Add default item
+        playerSelector.addItem("Select Player...");
+        
+        // Add each player to the dropdown
+        for (PlayerResult result : results) {
+            playerSelector.addItem(result.getUsername());
+        }
+        
+        System.out.println("Player selector updated with " + results.size() + " players");
     }
     
     private void startGame() {
@@ -378,8 +428,16 @@ public class MainMenuView extends JFrame {
         // Hide this frame
         setVisible(false);
         
-        // Create and show game panel
-        GameEngine gameEngine = new GameEngine();
+        // Create and show game panel with score continuation if applicable
+        GameEngine gameEngine = new GameEngine();        // Set continued score and hearts if player was selected from dropdown
+        if (continuedScore > 0) {
+            System.out.println("Starting game with continued data - Score: " + 
+                              continuedScore + ", Hearts: " + continuedHearts);
+            
+            // Set score and hearts in game engine
+            setPlayerDataInGameEngine(gameEngine, continuedScore, continuedHearts);
+        }
+        
         GamePanel gamePanel = new GamePanel(gameEngine, this);
         
         // Start game with the username
@@ -403,6 +461,112 @@ public class MainMenuView extends JFrame {
             } catch (Exception e) {
                 System.out.println("Failed to re-initialize database: " + e.getMessage());
             }
+        }
+    }
+    
+    // Load player names from database to selector
+    private void loadPlayerNames() {
+        try {
+            if (databaseManager == null) {
+                System.out.println("Warning: Database manager is null, can't load player names");
+                return;
+            }
+            
+            ArrayList<PlayerResult> results = databaseManager.getAllResults();
+            if (results == null) {
+                System.out.println("Warning: No results returned from database");
+                return;
+            }
+            
+            // Clear previous items
+            playerSelector.removeAllItems();
+            
+            // Add blank item first
+            playerSelector.addItem("");
+            
+            // Add each unique player name
+            for (PlayerResult result : results) {
+                String username = result.getUsername();
+                boolean exists = false;
+                
+                // Check if name already in dropdown
+                for (int i = 0; i < playerSelector.getItemCount(); i++) {
+                    if (username.equals(playerSelector.getItemAt(i))) {
+                        exists = true;
+                        break;
+                    }
+                }
+                
+                if (!exists) {
+                    playerSelector.addItem(username);
+                }
+            }
+            
+            System.out.println("Loaded player names from database");
+        } catch (Exception e) {
+            System.out.println("Error loading player names: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    // Load player data when a previous player is selected
+    private void loadSelectedPlayerData() {
+        String selectedUsername = (String) playerSelector.getSelectedItem();
+        
+        if (selectedUsername == null || selectedUsername.isEmpty()) {
+            // Clear previous continuation data
+            continuedScore = 0;
+            continuedHearts = 0;
+            return;
+        }
+        
+        try {
+            if (databaseManager == null) {
+                System.out.println("Warning: Database manager is null, can't load player data");
+                return;
+            }
+            
+            ArrayList<PlayerResult> results = databaseManager.getAllResults();
+            if (results == null) {
+                System.out.println("Warning: No results returned from database");
+                return;
+            }
+            
+            // Find the player's best score
+            for (PlayerResult result : results) {
+                if (selectedUsername.equals(result.getUsername())) {
+                    if (result.getSkor() > continuedScore) {
+                        continuedScore = result.getSkor();
+                        continuedHearts = result.getCount();
+                        usernameField.setText(selectedUsername);
+                    }
+                }
+            }
+            
+            System.out.println("Loaded player data for " + selectedUsername + 
+                              ": Score = " + continuedScore + ", Hearts = " + continuedHearts);
+        } catch (Exception e) {
+            System.out.println("Error loading player data: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    // Helper method to set player data in game engine using reflection
+    private void setPlayerDataInGameEngine(GameEngine gameEngine, int score, int heartsCollected) {
+        try {
+            // Get the methods using reflection
+            java.lang.reflect.Method setScoreMethod = gameEngine.getClass().getMethod("setScore", int.class);
+            java.lang.reflect.Method setHeartsMethod = gameEngine.getClass().getMethod("setHeartsCollected", int.class);
+            
+            // Invoke the methods
+            setScoreMethod.invoke(gameEngine, score);
+            setHeartsMethod.invoke(gameEngine, heartsCollected);
+            
+            System.out.println("Successfully set score and hearts in game engine");
+        } catch (Exception e) {
+            System.out.println("Failed to set score and hearts: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("Will continue with default values");
         }
     }
 }
