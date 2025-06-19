@@ -56,12 +56,22 @@ public class DatabaseManager {
             System.out.println("Unexpected error in DatabaseManager: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    // Singleton pattern to ensure only one database connection
+    }    // Singleton pattern to ensure only one database connection
     public static synchronized DatabaseManager getInstance() {
         if (instance == null) {
             instance = new DatabaseManager();
+        } else {
+            // Check if connection is still alive
+            try {
+                if (instance.connection == null || instance.connection.isClosed()) {
+                    System.out.println("Database connection was closed, creating a new one");
+                    instance = new DatabaseManager();
+                }
+            } catch (SQLException e) {
+                System.out.println("Error checking database connection: " + e.getMessage());
+                // Try to create a new instance
+                instance = new DatabaseManager();
+            }
         }
         return instance;
     }
@@ -118,11 +128,27 @@ public class DatabaseManager {
     }    // Save player result (insert new or update if exists)
     public void savePlayerResult(PlayerResult playerResult) {
         if (connection == null) {
-            System.out.println("Cannot save result - no connection available");
-            return;
+            System.out.println("Cannot save result - no connection available, trying to reconnect...");
+            try {
+                // Try to reconnect
+                connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/azzam_love_db", "root", "");
+                System.out.println("Reconnected to database successfully");
+            } catch (SQLException reconnectEx) {
+                System.out.println("Failed to reconnect to database: " + reconnectEx.getMessage());
+                return;
+            }
         }
         
         try {
+            // Make sure the table exists
+            initializeDatabase();
+            
+            // Print debugging information
+            System.out.println("===== DATABASE SAVE OPERATION =====");
+            System.out.println("Saving player: " + playerResult.getUsername());
+            System.out.println("Score: " + playerResult.getSkor());
+            System.out.println("Hearts: " + playerResult.getCount());
+            
             // Check if username already exists
             String checkQuery = "SELECT * FROM thasil WHERE username = ?";
             statement = connection.prepareStatement(checkQuery);
@@ -132,7 +158,11 @@ public class DatabaseManager {
             if (rs.next()) {
                 // Get existing score and hearts
                 int existingSkor = rs.getInt("skor");
-                int existingCount = rs.getInt("count");
+                int existingHearts = rs.getInt("count");
+                
+                System.out.println("Player already exists in database");
+                System.out.println("Existing score: " + existingSkor);
+                System.out.println("Existing hearts: " + existingHearts);
                 
                 // Only update if new score is higher
                 if (playerResult.getSkor() > existingSkor) {
@@ -142,15 +172,15 @@ public class DatabaseManager {
                     statement.setInt(1, playerResult.getSkor());
                     statement.setInt(2, playerResult.getCount());
                     statement.setString(3, playerResult.getUsername());
+                    
                     int rowsAffected = statement.executeUpdate();
-                    System.out.println("Updated existing player record: " + playerResult.getUsername() + 
-                                     " with higher score: " + playerResult.getSkor() + 
-                                     " (old: " + existingSkor + ")");
+                    System.out.println("Updated record! Rows affected: " + rowsAffected);
+                    System.out.println("Updated player record: " + playerResult.getUsername() + 
+                                    " with higher score: " + playerResult.getSkor() + 
+                                    " (previous: " + existingSkor + ")");
                 } else {
                     // No update needed
-                    System.out.println("No update needed for player: " + playerResult.getUsername() + 
-                                     " - Current score: " + existingSkor + 
-                                     " is better than new score: " + playerResult.getSkor());
+                    System.out.println("No update needed - current score is better");
                 }
             } else {
                 // Insert new record
@@ -159,10 +189,13 @@ public class DatabaseManager {
                 statement.setString(1, playerResult.getUsername());
                 statement.setInt(2, playerResult.getSkor());
                 statement.setInt(3, playerResult.getCount());
+                
                 int rowsAffected = statement.executeUpdate();
+                System.out.println("New record created! Rows affected: " + rowsAffected);
                 System.out.println("Inserted new player record: " + playerResult.getUsername() + 
-                                 " with score: " + playerResult.getSkor());
+                                " with score: " + playerResult.getSkor());
             }
+            System.out.println("===== DATABASE OPERATION COMPLETED =====");
         } catch (SQLException e) {
             System.out.println("Error saving player result: " + e.getMessage());
             e.printStackTrace();

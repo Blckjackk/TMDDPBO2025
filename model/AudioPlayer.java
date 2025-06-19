@@ -21,36 +21,80 @@ public class AudioPlayer {
             instance = new AudioPlayer();
         }
         return instance;
-    }
-
-    // Load all game sounds
+    }    // Load all game sounds
     private void loadSounds() {
         try {
-            // Coba load file MP3, jika gagal akan mencoba dengan format WAV
+            // Try both MP3 and WAV formats for each sound
+            // Game start sound
+            boolean gameStartLoaded = false;
             try {
                 loadSound("game_start", "assets/sound game start.mp3");
+                gameStartLoaded = true;
             } catch (Exception e) {
                 System.out.println("Couldn't load MP3, trying WAV: " + e.getMessage());
-                // Jika ada versi WAV, bisa coba load disini
-                // loadSound("game_start", "assets/sound game start.wav");
+                try {
+                    loadSound("game_start", "sounds/game_start.wav");
+                    gameStartLoaded = true;
+                } catch (Exception e2) {
+                    System.out.println("Couldn't load WAV either: " + e2.getMessage());
+                }
+            }
+            if (!gameStartLoaded) {
+                System.out.println("WARNING: game_start sound could not be loaded in any format");
             }
             
+            // In-game music
+            boolean inGameLoaded = false;
             try {
                 loadSound("ingame", "assets/sound ingame.mp3");
+                inGameLoaded = true;
             } catch (Exception e) {
                 System.out.println("Couldn't load MP3, trying WAV: " + e.getMessage());
+                try {
+                    loadSound("ingame", "sounds/game_soundtrack.wav");
+                    inGameLoaded = true;
+                } catch (Exception e2) {
+                    System.out.println("Couldn't load WAV either: " + e2.getMessage());
+                }
+            }
+            if (!inGameLoaded) {
+                System.out.println("WARNING: ingame sound could not be loaded in any format");
             }
             
+            // Achievement sound
+            boolean achievementLoaded = false;
             try {
                 loadSound("achievement", "assets/sound achivement.mp3");
+                achievementLoaded = true;
             } catch (Exception e) {
                 System.out.println("Couldn't load MP3, trying WAV: " + e.getMessage());
+                try {
+                    loadSound("achievement", "sounds/game_bonus.wav");
+                    achievementLoaded = true;
+                } catch (Exception e2) {
+                    System.out.println("Couldn't load WAV either: " + e2.getMessage());
+                }
+            }
+            if (!achievementLoaded) {
+                System.out.println("WARNING: achievement sound could not be loaded in any format");
             }
             
+            // Character change sound
+            boolean characterChangeLoaded = false;
             try {
                 loadSound("character_change", "assets/sound berubah.mp3");
+                characterChangeLoaded = true;
             } catch (Exception e) {
                 System.out.println("Couldn't load MP3, trying WAV: " + e.getMessage());
+                try {
+                    loadSound("character_change", "sounds/game_over.wav");
+                    characterChangeLoaded = true;
+                } catch (Exception e2) {
+                    System.out.println("Couldn't load WAV either: " + e2.getMessage());
+                }
+            }
+            if (!characterChangeLoaded) {
+                System.out.println("WARNING: character_change sound could not be loaded in any format");
             }
             
             System.out.println("Audio initialization completed");

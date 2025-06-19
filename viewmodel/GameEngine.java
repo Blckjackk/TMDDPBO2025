@@ -99,44 +99,62 @@ public class GameEngine {
             }
         }
     }
-    
-    // End game and save result
+      // End game and save result
     public void endGame() {
         if (isRunning) {
             isRunning = false;
+            System.out.println("\n========== GAME OVER ==========");
+            System.out.println("Final Score: " + score);
+            System.out.println("Hearts Collected: " + heartsCollected);
             
             // Save result to database
             if (currentUsername != null && !currentUsername.isEmpty()) {
                 try {
-                    System.out.println("Saving result to database for " + currentUsername + 
-                                       " - Score: " + score + ", Hearts: " + heartsCollected);
+                    System.out.println("Attempting to save game result to database");
+                    System.out.println("Username: " + currentUsername);
+                    System.out.println("Score: " + score);
+                    System.out.println("Hearts: " + heartsCollected);
                     
-                    // Make sure database manager is initialized
-                    if (databaseManager == null) {
-                        System.out.println("Database manager was null, getting instance now");
-                        databaseManager = DatabaseManager.getInstance();
-                    }
+                    // Always get a fresh instance of the database manager
+                    databaseManager = DatabaseManager.getInstance();
                     
                     if (databaseManager != null) {
-                        // Initialize database if needed
+                        // Force initialize database to ensure table exists
                         databaseManager.initializeDatabase();
                         
-                        // Create player result and save it
+                        // Create player result 
                         PlayerResult result = new PlayerResult(currentUsername, score, heartsCollected);
-                          // Call the savePlayerResult method
-                        databaseManager.savePlayerResult(result);
-                        System.out.println("Attempted to save result to database for " + 
-                                        currentUsername + " with score " + score);
+                        
+                        // Debug the player result object
+                        System.out.println("Created PlayerResult object:");
+                        System.out.println(" - Username: " + result.getUsername());
+                        System.out.println(" - Score: " + result.getSkor());
+                        System.out.println(" - Hearts: " + result.getCount());
+                        
+                        // Save to database with better error handling
+                        try {
+                            System.out.println("Calling savePlayerResult...");
+                            databaseManager.savePlayerResult(result);
+                            System.out.println("savePlayerResult completed");
+                        } catch (Exception dbEx) {
+                            System.out.println("Critical error saving to database: " + dbEx.getMessage());
+                            dbEx.printStackTrace();
+                        }
                     } else {
-                        System.out.println("Error: Database manager is still null, can't save result");
+                        System.out.println("CRITICAL ERROR: Database manager is null, can't save game result!");
                     }
                 } catch (Exception e) {
-                    System.out.println("Error saving result to database: " + e.getMessage());
+                    System.out.println("Unexpected error in endGame: " + e.getMessage());
                     e.printStackTrace();
                 }
             } else {
-                System.out.println("Cannot save result: username is empty");
+                System.out.println("Cannot save result: username is empty or null");
             }
+            
+            System.out.println("============================\n");
+            
+            // Double-check that game state is properly ended
+            isRunning = false;
         }
     }
     
