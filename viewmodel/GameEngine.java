@@ -1,12 +1,12 @@
 package viewmodel;
 
-import model.DatabaseManager;
-import model.PlayerResult;
-
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Random;
+
+import model.DatabaseManager;
+import model.PlayerResult;
 
 public class GameEngine {
     // Game constants

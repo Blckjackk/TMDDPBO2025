@@ -1,7 +1,9 @@
 import javax.swing.*;
 import java.io.File;
-import view.MainMenuView;
+
 import model.DatabaseManager;
+import view.MainMenuView;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 

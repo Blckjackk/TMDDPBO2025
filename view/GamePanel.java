@@ -1,8 +1,9 @@
 package view;
 
+import model.AudioPlayer;
 import viewmodel.GameEngine;
 import viewmodel.InputController;
-import model.AudioPlayer;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -110,39 +111,125 @@ public class GamePanel extends JPanel implements ActionListener {
             System.out.println("Error loading images: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-    
-    private void loadSounds() {
+    }      private void loadSounds() {
         try {
-            // Use the AudioPlayer singleton
+            // Dapatkan instance AudioPlayer dan pastikan suara diinisialisasi dengan benar
             AudioPlayer audioPlayer = AudioPlayer.getInstance();
             
-            // AudioPlayer loads all sounds during initialization
-            // No need to load them here again
-            System.out.println("Audio system initialized");
+            // Output debug untuk memastikan sistem audio berjalan
+            System.out.println("\n=== GAME SOUNDS INITIALIZATION ===");
+            System.out.println("AudioPlayer instance: " + (audioPlayer != null ? "OK" : "NULL"));
+            System.out.println("Sound enabled: " + audioPlayer.isSoundEnabled());
             
+            // Verifikasi library MP3
+            verifyMP3Libraries();
+            
+            // Verifikasi keberadaan file audio
+            verifyAudioFiles();
+            
+            System.out.println("=================================\n");
         } catch (Exception e) {
             System.out.println("Error initializing audio system: " + e.getMessage());
             e.printStackTrace();
         }
     }
-      // Helper method to play a sound once
+    
+    // Method untuk memeriksa apakah library MP3 tersedia
+    private void verifyMP3Libraries() {
+        System.out.println("Checking MP3 libraries...");
+        
+        boolean mp3LibsFound = false;
+        
+        // Check for MP3SPI in classpath
+        try {
+            Class.forName("javazoom.spi.mpeg.sampled.file.MpegAudioFileReader");
+            System.out.println("MP3SPI library found - MP3 support should be available");
+            mp3LibsFound = true;
+        } catch (ClassNotFoundException e) {
+            System.out.println("MP3SPI library not found in classpath");
+        }
+        
+        // Check for JLayer in classpath
+        try {
+            Class.forName("javazoom.jl.decoder.Decoder");
+            System.out.println("JLayer library found");
+        } catch (ClassNotFoundException e) {
+            System.out.println("JLayer library not found in classpath");
+        }
+        
+        if (!mp3LibsFound) {
+            System.out.println("WARNING: MP3 support libraries not found!");
+            System.out.println("To enable MP3 support, run download_mp3_libs.bat and then recompile the game");
+            System.out.println("Alternatively, run convert_mp3_to_wav.bat to create WAV versions of the sounds");
+        }
+    }
+      // Method untuk memeriksa keberadaan file audio
+    private void verifyAudioFiles() {
+        System.out.println("Verifying audio files...");
+        
+        // Check MP3 files in assets folder
+        boolean mp3Found = checkAudioFile("assets/sound game start.mp3", "Game Start Sound (MP3)");
+        mp3Found &= checkAudioFile("assets/sound ingame.mp3", "In-Game Music (MP3)");
+        mp3Found &= checkAudioFile("assets/sound achivement.mp3", "Achievement Sound (MP3)");
+        mp3Found &= checkAudioFile("assets/sound berubah.mp3", "Character Change Sound (MP3)");
+        
+        // If MP3 files are missing or if we want to check WAV fallbacks
+        if (!mp3Found) {
+            System.out.println("\nChecking WAV fallbacks in sounds folder...");
+            boolean wavFound = checkAudioFile("sounds/sound game start.wav", "Game Start Sound (WAV)");
+            wavFound &= checkAudioFile("sounds/sound ingame.wav", "In-Game Music (WAV)");
+            wavFound &= checkAudioFile("sounds/sound achivement.wav", "Achievement Sound (WAV)");
+            wavFound &= checkAudioFile("sounds/sound berubah.wav", "Character Change Sound (WAV)");
+            
+            if (!wavFound) {
+                System.out.println("\nWARNING: Neither MP3 nor WAV files were found completely!");
+                System.out.println("Run convert_mp3_to_wav.bat to convert your MP3 files to WAV format");
+                System.out.println("or download_mp3_libs.bat to add MP3 support libraries");
+            }
+        }
+        
+        System.out.println("Audio file verification complete");
+    }
+    
+    // Helper method untuk memeriksa keberadaan file audio
+    private boolean checkAudioFile(String path, String description) {
+        File file = new File(path);
+        if (file.exists()) {
+            System.out.println(description + " found: " + path + " (" + file.length() + " bytes)");
+            return true;
+        } else {
+            System.out.println("WARNING: " + description + " not found at: " + path);
+            return false;
+        }
+    }// Helper method to play a sound once
     private void playSound(String name) {
         try {
+            System.out.println("GamePanel: Playing sound: " + name);
             AudioPlayer audioPlayer = AudioPlayer.getInstance();
-            audioPlayer.playSound(name);
+            if (audioPlayer != null) {
+                audioPlayer.playSound(name);
+            } else {
+                System.out.println("ERROR: AudioPlayer instance is null");
+            }
         } catch (Exception e) {
-            System.out.println("Error in playSound: " + e.getMessage());
+            System.out.println("Error in playSound '" + name + "': " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
     // Helper method to loop a sound continuously
     private void loopSound(String name) {
         try {
+            System.out.println("GamePanel: Looping sound: " + name);
             AudioPlayer audioPlayer = AudioPlayer.getInstance();
-            audioPlayer.loopSound(name);
+            if (audioPlayer != null) {
+                audioPlayer.loopSound(name);
+            } else {
+                System.out.println("ERROR: AudioPlayer instance is null");
+            }
         } catch (Exception e) {
-            System.out.println("Error in loopSound: " + e.getMessage());
+            System.out.println("Error in loopSound '" + name + "': " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
