@@ -118,19 +118,19 @@ public class MainMenuView extends JFrame {
         try {
             // Load background image
             backgroundImage = ImageIO.read(new File("assets/background taman.png"));
-            
-            // Load character images
+              // Load character images
             azzamImage = ImageIO.read(new File("assets/Azzam Senang.png"));
             girlImage = ImageIO.read(new File("assets/Perempuan Cinta.png"));
             
-            // Load heart images
-            heartImages = new BufferedImage[6];
+            // Load heart images            
+            heartImages = new BufferedImage[7]; // Support for 7 heart types including broken heart
             heartImages[0] = ImageIO.read(new File("assets/Hati Biru.png"));
             heartImages[1] = ImageIO.read(new File("assets/Hati Hijau.png"));
             heartImages[2] = ImageIO.read(new File("assets/Hati Kuning.png"));
             heartImages[3] = ImageIO.read(new File("assets/Hati Merah.png"));
             heartImages[4] = ImageIO.read(new File("assets/Hati Orange.png"));
             heartImages[5] = ImageIO.read(new File("assets/Hati Ungu.png"));
+            heartImages[6] = ImageIO.read(new File("assets/Hati Potek.png"));
             
         } catch (IOException e) {
             System.out.println("Error loading images: " + e.getMessage());

@@ -107,6 +107,17 @@ public class GameEngine {
             System.out.println("Final Score: " + score);
             System.out.println("Hearts Collected: " + heartsCollected);
             
+            // Stop all sounds when game ends
+            try {
+                model.AudioPlayer audioPlayer = model.AudioPlayer.getInstance();
+                if (audioPlayer != null) {
+                    audioPlayer.stopAllSounds();
+                    System.out.println("All sounds stopped on game end");
+                }
+            } catch (Exception e) {
+                System.out.println("Error stopping sounds: " + e.getMessage());
+            }
+            
             // Save result to database
             if (currentUsername != null && !currentUsername.isEmpty()) {
                 try {
@@ -231,10 +242,17 @@ public class GameEngine {
                         
                         // Set the lasso reference for the heart
                         heart.setLasso(lasso);
+                          // Calculate points based on heart color
+                        int points = heart.getPoints();
+                        score += points;
                         
-                        // Calculate points based on heart color
-                        score += heart.getPoints();
-                        heartsCollected++;
+                        // Only count positive heart types for heartsCollected count
+                        if (points > 0) {
+                            heartsCollected++;
+                        } else {
+                            // For broken hearts, display a message in console
+                            System.out.println("Caught a broken heart! -12 points!");
+                        }
                         
                         // Make the lasso start retracting immediately
                         lasso.catchHeart();
@@ -255,11 +273,15 @@ public class GameEngine {
         if (random.nextInt(100) < 1 && hearts.size() < 7) {
             spawnHeart();
         }
-    }
-    
-    // Spawn a new heart
+    }    // Spawn a new heart
     private void spawnHeart() {
-        int type = random.nextInt(6); // 6 types of hearts
+        // Determine heart type - with a small chance for a broken heart
+        int type;
+        if (random.nextInt(100) < 15) { // 15% chance for a broken heart (not too frequent)
+            type = 6; // Broken heart
+        } else {
+            type = random.nextInt(6); // Normal hearts (0-5)
+        }
         
         // Determine spawn position and direction
         boolean fromTop = random.nextBoolean();
@@ -284,8 +306,7 @@ public class GameEngine {
             
             speedX = random.nextInt(HEART_SPEED_MAX - HEART_SPEED_MIN + 1) + HEART_SPEED_MIN;
         }
-        
-        // Create heart with appropriate points based on type
+          // Create heart with appropriate points based on type
         int points;
         switch (type) {
             case 0: points = 3; break; // Blue
@@ -293,7 +314,9 @@ public class GameEngine {
             case 2: points = 5; break; // Yellow
             case 3: points = 6; break; // Red
             case 4: points = 7; break; // Orange
-            default: points = 2; break; // Purple
+            case 5: points = 2; break; // Purple
+            case 6: points = -12; break; // Broken heart - negative points
+            default: points = 2; break; // Default fallback
         }
         
         System.out.println("Spawning heart at position: (" + x + ", " + y + ")");

@@ -101,6 +101,7 @@ public class GamePanel extends JPanel implements ActionListener {
             heartImages.put(3, ImageIO.read(new File("assets/Hati Merah.png"))); // Red - 6 points
             heartImages.put(4, ImageIO.read(new File("assets/Hati Orange.png"))); // Orange - 7 points
             heartImages.put(5, ImageIO.read(new File("assets/Hati Ungu.png"))); // Purple - 2 points
+            heartImages.put(6, ImageIO.read(new File("assets/Hati Potek.png"))); // Broken - -12 points
             
             // Load rope image for lasso
             ropeImage = ImageIO.read(new File("assets/tali cinta.png"));
@@ -259,10 +260,17 @@ public class GamePanel extends JPanel implements ActionListener {
         // Use AudioPlayer to play the background music (play once and auto-restart)
         playInGameMusic();
     }
-    
-    private void stopBackgroundMusic() {
-        // Use AudioPlayer to stop the background music
-        AudioPlayer.getInstance().stopSound("ingame");
+      private void stopBackgroundMusic() {
+        // Stop all sounds including background music when game ends
+        try {
+            AudioPlayer audioPlayer = AudioPlayer.getInstance();
+            if (audioPlayer != null) {
+                audioPlayer.stopAllSounds();
+                System.out.println("All sounds stopped in GamePanel");
+            }
+        } catch (Exception e) {
+            System.out.println("Error stopping sounds in GamePanel: " + e.getMessage());
+        }
     }
     
     // Helper method to ensure GameEngine methods are accessible
@@ -485,12 +493,20 @@ public class GamePanel extends JPanel implements ActionListener {
             }
             
             // Repaint
-            repaint();
-        } else {
-            // Game is over, stop timer and stop background music
-            stopBackgroundMusic();
-            playSound("character_change"); // Use as game over sound
+            repaint();        } else {
+            // Game is over, stop timer
             gameTimer.stop();
+            
+            // Play game over sound effect, then stop all background music
+            playSound("character_change"); // Use as game over sound            // Wait a short moment to let the sound effect play, then stop all sounds
+            javax.swing.Timer soundStopTimer = new javax.swing.Timer(1000, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    stopBackgroundMusic();
+                }
+            });
+            soundStopTimer.setRepeats(false);
+            soundStopTimer.start();
             
             // Game ended - automatically save the results to database
             // This happens automatically in GameEngine.endGame(), which was called when time ran out
