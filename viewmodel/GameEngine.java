@@ -90,11 +90,10 @@ public class GameEngine {
     // Start game with username
     public void startGame(String username) {
         if (username != null && !username.trim().isEmpty()) {
-            currentUsername = username;
-            isRunning = true;
+            currentUsername = username;            isRunning = true;
             startTime = System.currentTimeMillis();
-            // Start with some hearts
-            for (int i = 0; i < 5; i++) {
+            // Start with fewer hearts
+            for (int i = 0; i < 3; i++) {
                 spawnHeart();
             }
         }
@@ -208,11 +207,13 @@ public class GameEngine {
                     heartReachedGirl = true;
                 }
             }
-            
-            // Remove hearts that go offscreen
+              // Remove hearts that go offscreen
             if ((heart.getPosition().x < -50) || (heart.getPosition().x > SCREEN_WIDTH + 50)) {
                 hearts.remove(i);
-                spawnHeart(); // Spawn a new one
+                // Only spawn a new heart 50% of the time to reduce heart frequency
+                if (random.nextInt(100) < 50) {
+                    spawnHeart(); // Spawn a new one
+                }
             }
         }
           // Update lasso if active
@@ -244,9 +245,8 @@ public class GameEngine {
                 lasso = null;
             }
         }
-        
-        // Randomly spawn new hearts
-        if (random.nextInt(100) < 2 && hearts.size() < 10) {
+          // Randomly spawn new hearts (reduced frequency)
+        if (random.nextInt(100) < 1 && hearts.size() < 7) {
             spawnHeart();
         }
     }
@@ -388,11 +388,9 @@ public class GameEngine {
     // Inner class for Heart object
     public class Heart {
         private Point position;
-        private int speedX;
-        private int type; // 0-5 for different heart types
+        private int speedX;        private int type; // 0-5 for different heart types
         private int points;
         private boolean isCaught;
-        private Point targetPosition; // Position heart is moving to when caught
         
         public Heart(Point position, int speedX, int type, int points) {
             this.position = position;
