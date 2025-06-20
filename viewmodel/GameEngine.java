@@ -1,7 +1,6 @@
 package viewmodel;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -90,7 +89,8 @@ public class GameEngine {
     // Start game with username
     public void startGame(String username) {
         if (username != null && !username.trim().isEmpty()) {
-            currentUsername = username;            isRunning = true;
+            currentUsername = username;            
+            isRunning = true;
             startTime = System.currentTimeMillis();
             // Start with fewer hearts
             for (int i = 0; i < 3; i++) {
@@ -98,7 +98,8 @@ public class GameEngine {
             }
         }
     }
-      // End game and save result
+    
+    // End game and save result
     public void endGame() {
         if (isRunning) {
             isRunning = false;
@@ -207,7 +208,8 @@ public class GameEngine {
                     heartReachedGirl = true;
                 }
             }
-              // Remove hearts that go offscreen
+            
+            // Remove hearts that go offscreen
             if ((heart.getPosition().x < -50) || (heart.getPosition().x > SCREEN_WIDTH + 50)) {
                 hearts.remove(i);
                 // Only spawn a new heart 50% of the time to reduce heart frequency
@@ -216,16 +218,19 @@ public class GameEngine {
                 }
             }
         }
-          // Update lasso if active
+        
+        // Update lasso if active
         if (lasso != null) {
             lasso.update();
             
             // Check if lasso caught any heart (only if it hasn't already caught one)
             if (!lasso.hasHeartCaught()) {
                 for (Heart heart : hearts) {
-                    if (!heart.isCaught() && lasso.checkCollision(heart.getPosition(), 30)) {
-                        // Mark this heart as caught
+                    if (!heart.isCaught() && lasso.checkCollision(heart.getPosition(), 30)) {                        // Mark this heart as caught
                         heart.setCaught(true);
+                        
+                        // Set the lasso reference for the heart
+                        heart.setLasso(lasso);
                         
                         // Calculate points based on heart color
                         score += heart.getPoints();
@@ -245,7 +250,8 @@ public class GameEngine {
                 lasso = null;
             }
         }
-          // Randomly spawn new hearts (reduced frequency)
+        
+        // Randomly spawn new hearts (reduced frequency)
         if (random.nextInt(100) < 1 && hearts.size() < 7) {
             spawnHeart();
         }
@@ -323,7 +329,8 @@ public class GameEngine {
             playerPosition.y = newY;
         }
     }
-      // Setter methods for continuing a game with previous score
+    
+    // Setter methods for continuing a game with previous score
     public void setScore(int score) {
         System.out.println("Setting score to: " + score);
         this.score = score;
@@ -385,12 +392,15 @@ public class GameEngine {
         return girlFacingRight;
     }
     
-    // Inner class for Heart object
+    // Inner class for Heart objects - changed from class-level to public visibility
     public class Heart {
         private Point position;
-        private int speedX;        private int type; // 0-5 for different heart types
+        private int type; // 0=blue, 1=green, 2=orange, 3=yellow, 4=purple, 5=red
+        private int speedX;
         private int points;
         private boolean isCaught;
+        private boolean returnedToPlayer; // Flag to track if heart has reached player
+        private Lasso lasso; // Reference to the lasso that caught this heart
         
         public Heart(Point position, int speedX, int type, int points) {
             this.position = position;
@@ -398,14 +408,39 @@ public class GameEngine {
             this.type = type;
             this.points = points;
             this.isCaught = false;
+            this.returnedToPlayer = false;
         }
-        
-        public void update() {
+          public void update() {
             if (!isCaught) {
                 // Normal movement
                 position.x += speedX;
+            } else if (!returnedToPlayer) {
+                // If lasso is active and heart is caught, attach heart to lasso tip
+                if (lasso != null) {
+                    // Make heart follow the lasso tip exactly - no lag
+                    position.x = lasso.getCurrentPosition().x;
+                    position.y = lasso.getCurrentPosition().y;
+                      // If lasso has returned to player position, set flag to move to girl
+                    if (lasso.isDone()) {
+                        returnedToPlayer = true;
+                    }
+                } else {
+                    // If lasso is somehow null, move directly to player
+                    double dx = playerPosition.x - position.x;
+                    double dy = playerPosition.y - position.y;
+                    double distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 5) {
+                        double ratio = 5 / distance;
+                        position.x += dx * ratio;
+                        position.y += dy * ratio;
+                    } else {
+                        // Heart reached player, now set flag to move to girl
+                        returnedToPlayer = true;
+                    }
+                }
             } else {
-                // Move toward girl position when caught
+                // After reaching player, now move toward girl
                 double dx = girlPosition.x - position.x;
                 double dy = girlPosition.y - position.y;
                 double distance = Math.sqrt(dx * dx + dy * dy);
@@ -436,11 +471,20 @@ public class GameEngine {
         public boolean isCaught() {
             return isCaught;
         }
-        
-        public void setCaught(boolean caught) {
+          public void setCaught(boolean caught) {
             isCaught = caught;
+            if (caught && lasso == null) {
+                // Store reference to the lasso that caught this heart
+                this.lasso = GameEngine.this.lasso;
+            }
         }
-    }    // Inner class for Lasso object
+        
+        public void setLasso(Lasso lasso) {
+            this.lasso = lasso;
+        }
+    }
+    
+    // Inner class for Lasso object - changed from class-level to public visibility
     public class Lasso {
         private Point startPosition;
         private Point targetPosition;
@@ -448,7 +492,8 @@ public class GameEngine {
         private boolean extending;
         private boolean retracting;
         private boolean heartCaught; // Flag to track if a heart has been caught
-          public Lasso(Point startPosition, Point targetPosition) {
+        
+        public Lasso(Point startPosition, Point targetPosition) {
             this.startPosition = new Point(startPosition);
             this.targetPosition = new Point(targetPosition);
             this.currentPosition = new Point(startPosition);
@@ -456,7 +501,8 @@ public class GameEngine {
             this.retracting = false;
             this.heartCaught = false;
         }
-          public void update() {
+        
+        public void update() {
             // Update start position to follow player
             startPosition.x = playerPosition.x;
             startPosition.y = playerPosition.y;
@@ -527,6 +573,14 @@ public class GameEngine {
         
         public boolean hasHeartCaught() {
             return heartCaught;
+        }
+        
+        public boolean isExtending() {
+            return this.extending;
+        }
+        
+        public boolean isRetracting() {
+            return this.retracting;
         }
     }
 }

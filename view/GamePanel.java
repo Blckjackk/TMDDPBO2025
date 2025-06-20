@@ -12,7 +12,6 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.HashMap;
-import javax.sound.sampled.*;
 import java.io.File;
 import java.lang.reflect.Method;
 
@@ -216,6 +215,7 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
     
+    @SuppressWarnings("unused")
     // Helper method to loop a sound continuously
     private void loopSound(String name) {
         try {
@@ -232,6 +232,7 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
     
+    @SuppressWarnings("unused")
     // Helper method to stop a specific sound
     private void stopSound(String name) {
         try {
@@ -242,6 +243,7 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
     
+    @SuppressWarnings("unused")
     // Helper method to stop all sounds
     private void stopAllSounds() {
         try {
@@ -251,7 +253,9 @@ public class GamePanel extends JPanel implements ActionListener {
             System.out.println("Error in stopAllSounds: " + e.getMessage());
         }
     }
-      private void playBackgroundMusic() {
+    
+    @SuppressWarnings("unused")
+    private void playBackgroundMusic() {
         // Use AudioPlayer to play the background music (play once and auto-restart)
         playInGameMusic();
     }
@@ -267,11 +271,12 @@ public class GamePanel extends JPanel implements ActionListener {
             // Use reflection to check if methods exist
             Class<?> engineClass = gameEngine.getClass();
             
-            Method isGirlFacingRightMethod = engineClass.getMethod("isGirlFacingRight");
-            Method isHeartReachedGirlMethod = engineClass.getMethod("isHeartReachedGirl");
-            Method getEmotionStateMethod = engineClass.getMethod("getEmotionState");
-            Method isFacingRightMethod = engineClass.getMethod("isFacingRight");
-            Method getTimeRemainingMethod = engineClass.getMethod("getTimeRemaining");
+            // Check if all required methods exist (variables not used, but method existence is checked)
+            engineClass.getMethod("isGirlFacingRight");
+            engineClass.getMethod("isHeartReachedGirl");
+            engineClass.getMethod("getEmotionState");
+            engineClass.getMethod("isFacingRight");
+            engineClass.getMethod("getTimeRemaining");
             
             System.out.println("All required GameEngine methods are accessible");
         } catch (Exception e) {
