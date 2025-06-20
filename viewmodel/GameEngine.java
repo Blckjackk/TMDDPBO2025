@@ -215,18 +215,27 @@ public class GameEngine {
                 spawnHeart(); // Spawn a new one
             }
         }
-        
-        // Update lasso if active
+          // Update lasso if active
         if (lasso != null) {
             lasso.update();
             
-            // Check if lasso caught any heart
-            for (Heart heart : hearts) {
-                if (!heart.isCaught() && lasso.checkCollision(heart.getPosition(), 30)) {
-                    heart.setCaught(true);
-                    // Calculate points based on heart color
-                    score += heart.getPoints();
-                    heartsCollected++;
+            // Check if lasso caught any heart (only if it hasn't already caught one)
+            if (!lasso.hasHeartCaught()) {
+                for (Heart heart : hearts) {
+                    if (!heart.isCaught() && lasso.checkCollision(heart.getPosition(), 30)) {
+                        // Mark this heart as caught
+                        heart.setCaught(true);
+                        
+                        // Calculate points based on heart color
+                        score += heart.getPoints();
+                        heartsCollected++;
+                        
+                        // Make the lasso start retracting immediately
+                        lasso.catchHeart();
+                        
+                        // Only catch one heart per throw
+                        break;
+                    }
                 }
             }
             
@@ -440,13 +449,14 @@ public class GameEngine {
         private Point currentPosition;
         private boolean extending;
         private boolean retracting;
-        
-        public Lasso(Point startPosition, Point targetPosition) {
+        private boolean heartCaught; // Flag to track if a heart has been caught
+          public Lasso(Point startPosition, Point targetPosition) {
             this.startPosition = new Point(startPosition);
             this.targetPosition = new Point(targetPosition);
             this.currentPosition = new Point(startPosition);
             this.extending = true;
             this.retracting = false;
+            this.heartCaught = false;
         }
           public void update() {
             // Update start position to follow player
@@ -508,6 +518,17 @@ public class GameEngine {
         
         public Point getCurrentPosition() {
             return currentPosition;
+        }
+        
+        public void catchHeart() {
+            // Mark heart as caught and start retracting immediately
+            this.heartCaught = true;
+            this.extending = false;
+            this.retracting = true;
+        }
+        
+        public boolean hasHeartCaught() {
+            return heartCaught;
         }
     }
 }
