@@ -16,52 +16,50 @@ import java.io.File;
 import java.lang.reflect.Method;
 
 public class GamePanel extends JPanel implements ActionListener {
-    // Constants
+    // Konstanta
     private static final int PANEL_WIDTH = 800;
     private static final int PANEL_HEIGHT = 600;
     private static final int FPS = 60;
     
-    // References
+    // Referensi
     private GameEngine gameEngine;
     private InputController inputController;
     private MainMenuView mainMenuView;
     
-    // Timer for game loop
+    // Timer untuk putaran permainan
     private Timer gameTimer;
     
-    // Images
+    // Gambar
     private BufferedImage backgroundImage;
-    private BufferedImage[] playerImages; // Different emotion states
+    private BufferedImage[] playerImages; // Berbagai kondisi emosi
     private BufferedImage girlImage;
     private HashMap<Integer, BufferedImage> heartImages;
     private BufferedImage ropeImage;
-    
-    // Last emotion state for sound effects
+      // Status emosi terakhir untuk efek suara
     private int lastEmotionState = -1;
     
-    // Flag to track if achievement sound was recently played
-    private long lastAchievementSoundTime = 0;
-      public GamePanel(GameEngine gameEngine, MainMenuView mainMenuView) {
+    // Penanda untuk melacak apakah suara prestasi baru saja diputar
+    private long lastAchievementSoundTime = 0;      public GamePanel(GameEngine gameEngine, MainMenuView mainMenuView) {
         this.gameEngine = gameEngine;
         this.mainMenuView = mainMenuView;
         
-        // Set up panel
+        // Mengatur panel
         setPreferredSize(new Dimension(PANEL_WIDTH, PANEL_HEIGHT));
         setFocusable(true);
         
-        // Load assets
+        // Memuat aset
         loadImages();
         loadSounds();
         
-        // Call this method to verify GameEngine methods are available
+        // Memanggil metode ini untuk memverifikasi metode GameEngine tersedia
         ensureGameEngineMethods();
         
-        // Set up input controller
+        // Mengatur pengontrol input
         inputController = new InputController(gameEngine);
         addKeyListener(inputController);
         addMouseListener(inputController);
         
-        // Create game frame
+        // Membuat frame permainan
         JFrame gameFrame = new JFrame("Azzam Love - Game");
         gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         gameFrame.setResizable(false);
@@ -70,40 +68,39 @@ public class GamePanel extends JPanel implements ActionListener {
         gameFrame.setLocationRelativeTo(null);
         gameFrame.setVisible(true);
         
-        // Start game timer
+        // Memulai timer permainan
         gameTimer = new Timer(1000 / FPS, this);
         gameTimer.start();
-          // Play start sound and background music
+          // Memutar suara mulai dan musik latar
         playSound("game_start");
         playInGameMusic();
     }
-    
-    private void loadImages() {
+      private void loadImages() {
         try {
-            // Load background
+            // Memuat latar belakang
             backgroundImage = ImageIO.read(new File("assets/background taman.png"));
             
-            // Load player images for different emotions
+            // Memuat gambar pemain untuk berbagai emosi
             playerImages = new BufferedImage[4];
             playerImages[0] = ImageIO.read(new File("assets/Azzam Berjalan.png")); // Normal
-            playerImages[1] = ImageIO.read(new File("assets/Azzam Senang.png"));   // Happy (score >= 30)
-            playerImages[2] = ImageIO.read(new File("assets/Azzam Nahh Ituu.png")); // Excited (score >= 50)
-            playerImages[3] = ImageIO.read(new File("assets/Azzam Tertawa.png"));   // Laughing (score >= 100)
+            playerImages[1] = ImageIO.read(new File("assets/Azzam Senang.png"));   // Senang (skor >= 30)
+            playerImages[2] = ImageIO.read(new File("assets/Azzam Nahh Ituu.png")); // Bersemangat (skor >= 50)
+            playerImages[3] = ImageIO.read(new File("assets/Azzam Tertawa.png"));   // Tertawa (skor >= 100)
             
-            // Load girl
+            // Memuat karakter perempuan
             girlImage = ImageIO.read(new File("assets/Perempuan Senang.png"));
             
-            // Load heart images
+            // Memuat gambar hati
             heartImages = new HashMap<>();
-            heartImages.put(0, ImageIO.read(new File("assets/Hati Biru.png"))); // Blue - 3 points
-            heartImages.put(1, ImageIO.read(new File("assets/Hati Hijau.png"))); // Green - 4 points
-            heartImages.put(2, ImageIO.read(new File("assets/Hati Kuning.png"))); // Yellow - 5 points
-            heartImages.put(3, ImageIO.read(new File("assets/Hati Merah.png"))); // Red - 6 points
-            heartImages.put(4, ImageIO.read(new File("assets/Hati Orange.png"))); // Orange - 7 points
-            heartImages.put(5, ImageIO.read(new File("assets/Hati Ungu.png"))); // Purple - 2 points
-            heartImages.put(6, ImageIO.read(new File("assets/Hati Potek.png"))); // Broken - -12 points
+            heartImages.put(0, ImageIO.read(new File("assets/Hati Biru.png"))); // Biru - 3 poin
+            heartImages.put(1, ImageIO.read(new File("assets/Hati Hijau.png"))); // Hijau - 4 poin
+            heartImages.put(2, ImageIO.read(new File("assets/Hati Kuning.png"))); // Kuning - 5 poin
+            heartImages.put(3, ImageIO.read(new File("assets/Hati Merah.png"))); // Merah - 6 poin
+            heartImages.put(4, ImageIO.read(new File("assets/Hati Orange.png"))); // Oranye - 7 poin
+            heartImages.put(5, ImageIO.read(new File("assets/Hati Ungu.png"))); // Ungu - 2 poin
+            heartImages.put(6, ImageIO.read(new File("assets/Hati Potek.png"))); // Rusak - -12 poin
             
-            // Load rope image for lasso
+            // Memuat gambar tali untuk lasso
             ropeImage = ImageIO.read(new File("assets/tali cinta.png"));
             
         } catch (IOException e) {
@@ -200,106 +197,104 @@ public class GamePanel extends JPanel implements ActionListener {
             System.out.println("WARNING: " + description + " not found at: " + path);
             return false;
         }
-    }// Helper method to play a sound once
+    }// Metode pembantu untuk memainkan suara sekali
     private void playSound(String name) {
         try {
-            System.out.println("GamePanel: Playing sound: " + name);
+            System.out.println("GamePanel: Memainkan suara: " + name);
             AudioPlayer audioPlayer = AudioPlayer.getInstance();
             if (audioPlayer != null) {
                 audioPlayer.playSound(name);
             } else {
-                System.out.println("ERROR: AudioPlayer instance is null");
+                System.out.println("ERROR: Instance AudioPlayer adalah null");
             }
         } catch (Exception e) {
-            System.out.println("Error in playSound '" + name + "': " + e.getMessage());
+            System.out.println("Error pada playSound '" + name + "': " + e.getMessage());
             e.printStackTrace();
         }
     }
     
     @SuppressWarnings("unused")
-    // Helper method to loop a sound continuously
+    // Metode pembantu untuk mengulang suara terus-menerus
     private void loopSound(String name) {
         try {
-            System.out.println("GamePanel: Looping sound: " + name);
+            System.out.println("GamePanel: Mengulang suara: " + name);
             AudioPlayer audioPlayer = AudioPlayer.getInstance();
             if (audioPlayer != null) {
                 audioPlayer.loopSound(name);
             } else {
-                System.out.println("ERROR: AudioPlayer instance is null");
+                System.out.println("ERROR: Instance AudioPlayer adalah null");
             }
         } catch (Exception e) {
-            System.out.println("Error in loopSound '" + name + "': " + e.getMessage());
+            System.out.println("Error pada loopSound '" + name + "': " + e.getMessage());
             e.printStackTrace();
         }
     }
     
     @SuppressWarnings("unused")
-    // Helper method to stop a specific sound
+    // Metode pembantu untuk menghentikan suara tertentu
     private void stopSound(String name) {
         try {
             AudioPlayer audioPlayer = AudioPlayer.getInstance();
             audioPlayer.stopSound(name);
         } catch (Exception e) {
-            System.out.println("Error in stopSound: " + e.getMessage());
+            System.out.println("Error pada stopSound: " + e.getMessage());
         }
     }
     
     @SuppressWarnings("unused")
-    // Helper method to stop all sounds
+    // Metode pembantu untuk menghentikan semua suara
     private void stopAllSounds() {
         try {
             AudioPlayer audioPlayer = AudioPlayer.getInstance();
             audioPlayer.stopAllSounds();
         } catch (Exception e) {
-            System.out.println("Error in stopAllSounds: " + e.getMessage());
+            System.out.println("Error pada stopAllSounds: " + e.getMessage());
         }
     }
-    
-    @SuppressWarnings("unused")
+      @SuppressWarnings("unused")
     private void playBackgroundMusic() {
-        // Use AudioPlayer to play the background music (play once and auto-restart)
+        // Menggunakan AudioPlayer untuk memutar musik latar (putar sekali dan mulai ulang otomatis)
         playInGameMusic();
     }
       private void stopBackgroundMusic() {
-        // Stop all sounds including background music when game ends
+        // Menghentikan semua suara termasuk musik latar belakang saat permainan berakhir
         try {
             AudioPlayer audioPlayer = AudioPlayer.getInstance();
             if (audioPlayer != null) {
                 audioPlayer.stopAllSounds();
-                System.out.println("All sounds stopped in GamePanel");
+                System.out.println("Semua suara dihentikan di GamePanel");
             }
         } catch (Exception e) {
-            System.out.println("Error stopping sounds in GamePanel: " + e.getMessage());
+            System.out.println("Error menghentikan suara di GamePanel: " + e.getMessage());
         }
     }
     
-    // Helper method to ensure GameEngine methods are accessible
+    // Metode pembantu untuk memastikan metode GameEngine dapat diakses
     private void ensureGameEngineMethods() {
         try {
-            // Use reflection to check if methods exist
+            // Menggunakan reflection untuk memeriksa apakah metode ada
             Class<?> engineClass = gameEngine.getClass();
             
-            // Check if all required methods exist (variables not used, but method existence is checked)
+            // Memeriksa apakah semua metode yang diperlukan ada (variabel tidak digunakan, tetapi keberadaan metode diperiksa)
             engineClass.getMethod("isGirlFacingRight");
             engineClass.getMethod("isHeartReachedGirl");
             engineClass.getMethod("getEmotionState");
             engineClass.getMethod("isFacingRight");
             engineClass.getMethod("getTimeRemaining");
             
-            System.out.println("All required GameEngine methods are accessible");
+            System.out.println("Semua metode GameEngine yang diperlukan dapat diakses");
         } catch (Exception e) {
-            System.out.println("Error checking GameEngine methods: " + e.getMessage());
+            System.out.println("Error memeriksa metode GameEngine: " + e.getMessage());
         }
     }
-    
-    // Wrapper methods to access GameEngine methods via reflection
+      // Metode pembungkus untuk mengakses metode GameEngine melalui reflection
     private boolean isGirlFacingRight() {
         try {
             Method method = gameEngine.getClass().getMethod("isGirlFacingRight");
             return (boolean) method.invoke(gameEngine);
         } catch (Exception e) {
-            System.out.println("Error in isGirlFacingRight: " + e.getMessage());
-            return true; // Default value
+            System.out.println("Error pada isGirlFacingRight: " + e.getMessage());
+            return true; // Nilai default
         }
     }
     
@@ -308,8 +303,8 @@ public class GamePanel extends JPanel implements ActionListener {
             Method method = gameEngine.getClass().getMethod("isHeartReachedGirl");
             return (boolean) method.invoke(gameEngine);
         } catch (Exception e) {
-            System.out.println("Error in isHeartReachedGirl: " + e.getMessage());
-            return false; // Default value
+            System.out.println("Error pada isHeartReachedGirl: " + e.getMessage());
+            return false; // Nilai default
         }
     }
     
@@ -318,8 +313,8 @@ public class GamePanel extends JPanel implements ActionListener {
             Method method = gameEngine.getClass().getMethod("getEmotionState");
             return (int) method.invoke(gameEngine);
         } catch (Exception e) {
-            System.out.println("Error in getEmotionState: " + e.getMessage());
-            return 0; // Default value
+            System.out.println("Error pada getEmotionState: " + e.getMessage());
+            return 0; // Nilai default
         }
     }
     
@@ -328,8 +323,8 @@ public class GamePanel extends JPanel implements ActionListener {
             Method method = gameEngine.getClass().getMethod("isFacingRight");
             return (boolean) method.invoke(gameEngine);
         } catch (Exception e) {
-            System.out.println("Error in isFacingRight: " + e.getMessage());
-            return true; // Default value
+            System.out.println("Error pada isFacingRight: " + e.getMessage());
+            return true; // Nilai default
         }
     }
     
@@ -338,48 +333,46 @@ public class GamePanel extends JPanel implements ActionListener {
             Method method = gameEngine.getClass().getMethod("getTimeRemaining");
             return (long) method.invoke(gameEngine);
         } catch (Exception e) {
-            System.out.println("Error in getTimeRemaining: " + e.getMessage());
-            return 0; // Default value
+            System.out.println("Error pada getTimeRemaining: " + e.getMessage());
+            return 0; // Nilai default
         }
     }
-    
-    @Override
+      @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         
-        // Create graphics object for better rendering
+        // Membuat objek grafik untuk rendering yang lebih baik
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
-        // Draw background
+        // Menggambar latar belakang
         if (backgroundImage != null) {
             g2d.drawImage(backgroundImage, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, null);
         } else {
-            // Fallback background
+            // Latar belakang cadangan
             g2d.setColor(new Color(230, 255, 230));
             g2d.fillRect(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
         }
-        
-        // Draw game objects if game is running
+          // Menggambar objek permainan jika permainan sedang berjalan
         if (gameEngine.isRunning()) {
-            // Draw lasso if active
+            // Menggambar lasso jika aktif
             GameEngine.Lasso lasso = gameEngine.getLasso();
             if (lasso != null) {
                 Point start = lasso.getStartPosition();
                 Point end = lasso.getCurrentPosition();
                 
-                // Draw rope line (with some thickness)
+                // Menggambar garis tali (dengan ketebalan tertentu)
                 g2d.setStroke(new BasicStroke(2));
                 g2d.setColor(Color.RED);
                 g2d.drawLine(start.x, start.y, end.x, end.y);
                 
-                // Draw rope image at the end
+                // Menggambar gambar tali di ujung
                 if (ropeImage != null) {
                     g2d.drawImage(ropeImage, end.x - 15, end.y - 15, 30, 30, null);
                 }
             }
             
-            // Draw hearts
+            // Menggambar hati
             for (GameEngine.Heart heart : gameEngine.getHearts()) {
                 Point pos = heart.getPosition();
                 BufferedImage heartImage = heartImages.get(heart.getType());
@@ -387,104 +380,101 @@ public class GamePanel extends JPanel implements ActionListener {
                 if (heartImage != null) {
                     g2d.drawImage(heartImage, pos.x - 25, pos.y - 25, 50, 50, null);
                 } else {
-                    // Fallback heart drawing
+                    // Gambar hati cadangan
                     g2d.setColor(Color.RED);
                     g2d.fillOval(pos.x - 15, pos.y - 15, 30, 30);
                 }
             }
-            
-            // Draw girl (target for hearts)
+              // Menggambar perempuan (target untuk hati)
             Point girlPos = gameEngine.getGirlPosition();
             if (girlImage != null) {
-                // Check girl facing direction
+                // Memeriksa arah hadap perempuan
                 if (!isGirlFacingRight()) {
-                    // Draw mirrored image for girl facing left
+                    // Menggambar gambar yang dicerminkan untuk perempuan menghadap ke kiri
                     g2d.translate(girlPos.x, girlPos.y);
                     g2d.scale(-1, 1);
                     g2d.drawImage(girlImage, -40, -50, 80, 100, null);
                     g2d.scale(-1, 1);
                     g2d.translate(-girlPos.x, -girlPos.y);
                 } else {
-                    // Draw normal image
+                    // Menggambar gambar normal
                     g2d.drawImage(girlImage, girlPos.x - 40, girlPos.y - 50, 80, 100, null);
                 }
             } else {
-                // Fallback girl drawing
+                // Gambar perempuan cadangan
                 g2d.setColor(Color.PINK);
                 g2d.fillRect(girlPos.x - 20, girlPos.y - 30, 40, 60);
             }
             
-            // Draw player (Azzam) with correct emotion and direction
+            // Menggambar pemain (Azzam) dengan emosi dan arah yang benar
             Point playerPos = gameEngine.getPlayerPosition();
             if (playerImages != null) {
                 int emotionState = getEmotionState();
                 BufferedImage playerImage = playerImages[emotionState];
                 
                 if (playerImage != null) {
-                    // Check if we need to mirror the image
+                    // Memeriksa apakah kita perlu mencerminkan gambar
                     if (!isFacingRight()) {
-                        // Draw mirrored image
+                        // Menggambar gambar yang dicerminkan
                         g2d.translate(playerPos.x, playerPos.y);
                         g2d.scale(-1, 1);
                         g2d.drawImage(playerImage, -40, -50, 80, 100, null);
                         g2d.scale(-1, 1);
                         g2d.translate(-playerPos.x, -playerPos.y);
                     } else {
-                        // Draw normal image
+                        // Menggambar gambar normal
                         g2d.drawImage(playerImage, playerPos.x - 40, playerPos.y - 50, 80, 100, null);
                     }
                 }
             } else {
-                // Fallback player drawing
+                // Gambar pemain cadangan
                 g2d.setColor(Color.BLUE);
                 g2d.fillRect(playerPos.x - 20, playerPos.y - 30, 40, 60);
             }
-            
-            // Draw timer
+              // Menggambar timer
             long timeRemaining = getTimeRemaining();
             int seconds = (int)(timeRemaining / 1000);
             int milliseconds = (int)(timeRemaining % 1000 / 10);
             
             g2d.setColor(Color.BLACK);
             g2d.setFont(new Font("Arial", Font.BOLD, 24));
-            g2d.drawString(String.format("Time: %02d:%02d", seconds, milliseconds), PANEL_WIDTH - 150, 30);
+            g2d.drawString(String.format("Waktu: %02d:%02d", seconds, milliseconds), PANEL_WIDTH - 150, 30);
             
-            // Draw score and hearts collected
+            // Menggambar skor dan hati yang dikumpulkan
             g2d.setColor(Color.BLACK);
             g2d.setFont(new Font("Arial", Font.BOLD, 20));
-            g2d.drawString("Score: " + gameEngine.getScore(), 20, 30);
-            g2d.drawString("Hearts: " + gameEngine.getHeartsCollected(), 20, 60);
+            g2d.drawString("Skor: " + gameEngine.getScore(), 20, 30);
+            g2d.drawString("Hati: " + gameEngine.getHeartsCollected(), 20, 60);
             
-            // Draw instructions
+            // Menggambar instruksi
             g2d.setFont(new Font("Arial", Font.PLAIN, 14));
-            g2d.drawString("Use arrow keys to move", 20, PANEL_HEIGHT - 40);
-            g2d.drawString("Click to throw lasso", 20, PANEL_HEIGHT - 20);
+            g2d.drawString("Gunakan tombol panah untuk bergerak", 20, PANEL_HEIGHT - 40);
+            g2d.drawString("Klik untuk melempar lasso", 20, PANEL_HEIGHT - 20);
         }
     }
-    
-    @Override
+      @Override
     public void actionPerformed(ActionEvent e) {
-        // Check if game is still running
+        // Memeriksa apakah permainan masih berjalan
         if (gameEngine.isRunning()) {
-            // Process input
+            // Memproses input
             inputController.processInput();
             
-            // Update game state
+            // Memperbarui status permainan
             gameEngine.update();
             
-            // Check for emotion state change for sound effects
+            // Memeriksa perubahan status emosi untuk efek suara
             int currentEmotionState = getEmotionState();
             if (currentEmotionState != lastEmotionState) {
-                // Play sound effects for reaching score milestones
+                // Memutar efek suara untuk mencapai tonggak skor
                 if (currentEmotionState > lastEmotionState) {
-                    playSound("character_change"); // Use the "sound berubah.mp3" when emotion changes
+                    playSound("character_change"); // Gunakan "sound berubah.mp3" ketika emosi berubah
                 }
                 lastEmotionState = currentEmotionState;
             }
             
-            // Check if a heart has reached the girl (for achievement sound)
+            // Memeriksa apakah hati telah mencapai perempuan (untuk suara pencapaian)
             if (isHeartReachedGirl()) {
-                // Don't play achievement sounds too close together
+                // Jangan memainkan suara pencapaian terlalu dekat bersama-sama
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - lastAchievementSoundTime > 500) { // 500ms cooldown
                     playSound("achievement");
@@ -492,13 +482,13 @@ public class GamePanel extends JPanel implements ActionListener {
                 }
             }
             
-            // Repaint
+            // Menggambar ulang
             repaint();        } else {
-            // Game is over, stop timer
+            // Permainan berakhir, hentikan timer
             gameTimer.stop();
             
-            // Play game over sound effect, then stop all background music
-            playSound("character_change"); // Use as game over sound            // Wait a short moment to let the sound effect play, then stop all sounds
+            // Putar efek suara game over, kemudian hentikan semua musik latar belakang
+            playSound("character_change"); // Gunakan sebagai suara game over            // Tunggu sebentar untuk membiarkan efek suara bermain, kemudian hentikan semua suara
             javax.swing.Timer soundStopTimer = new javax.swing.Timer(1000, new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -508,39 +498,38 @@ public class GamePanel extends JPanel implements ActionListener {
             soundStopTimer.setRepeats(false);
             soundStopTimer.start();
             
-            // Game ended - automatically save the results to database
-            // This happens automatically in GameEngine.endGame(), which was called when time ran out
+            // Permainan berakhir - otomatis menyimpan hasil ke database
+            // Ini terjadi secara otomatis di GameEngine.endGame(), yang dipanggil ketika waktu habis
             
-            // Show final score before returning to menu
+            // Tampilkan skor akhir sebelum kembali ke menu
             JFrame gameFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
             JOptionPane.showMessageDialog(gameFrame, 
-                "Time's up! Your final score: " + gameEngine.getScore() + 
-                "\nHearts collected: " + gameEngine.getHeartsCollected() +
-                "\n\nYour result has been saved to database!",
+                "Waktu habis! Skor akhir Anda: " + gameEngine.getScore() + 
+                "\nHati yang dikumpulkan: " + gameEngine.getHeartsCollected() +
+                "\n\nHasil Anda telah disimpan ke database!",
                 "Game Over", 
                 JOptionPane.INFORMATION_MESSAGE);
             
-            // Close game window
+            // Tutup jendela permainan
             gameFrame.dispose();
             
-            // Refresh scores and show menu
+            // Perbarui skor dan tampilkan menu
             mainMenuView.refreshScores();
             mainMenuView.setVisible(true);
         }
     }
-    
-    // Helper method to play in-game music (play once and restart when finished)
+      // Metode pembantu untuk memutar musik dalam permainan (putar sekali dan mulai ulang ketika selesai)
     private void playInGameMusic() {
         try {
-            System.out.println("GamePanel: Playing in-game music with auto-restart");
+            System.out.println("GamePanel: Memutar musik dalam permainan dengan auto-restart");
             AudioPlayer audioPlayer = AudioPlayer.getInstance();
             if (audioPlayer != null) {
                 audioPlayer.playInGameMusic();
             } else {
-                System.out.println("ERROR: AudioPlayer instance is null");
+                System.out.println("ERROR: Instance AudioPlayer adalah null");
             }
         } catch (Exception e) {
-            System.out.println("Error in playInGameMusic: " + e.getMessage());
+            System.out.println("Error pada playInGameMusic: " + e.getMessage());
             e.printStackTrace();
         }
     }

@@ -7,62 +7,57 @@ import java.util.Random;
 import model.DatabaseManager;
 import model.PlayerResult;
 
-public class GameEngine {
-    // Game constants
+public class GameEngine {    // Konstanta permainan
     private static final int SCREEN_WIDTH = 800;
     private static final int SCREEN_HEIGHT = 600;
     private static final int PLAYER_SPEED = 5;
     private static final int HEART_SPEED_MIN = 1;
     private static final int HEART_SPEED_MAX = 3;
-    private static final int GAME_DURATION_MS = 60000; // 1 minute in milliseconds
-    
-    // Game state
+    private static final int GAME_DURATION_MS = 60000; // 1 menit dalam milidetik
+      // Status permainan
     private boolean isRunning;
     private String currentUsername;
     private int score;
     private int heartsCollected;
     private long startTime;
     private long timeRemaining;
-    private boolean facingRight; // For character direction
-    private boolean girlFacingRight; // Direction for girl character
-    private int emotionState; // 0=normal, 1=happy, 2=excited, 3=laughing
-    private boolean heartReachedGirl; // Flag for playing achievement sound
-    
-    // Game objects
+    private boolean facingRight; // Untuk arah karakter
+    private boolean girlFacingRight; // Arah untuk karakter perempuan
+    private int emotionState; // 0=normal, 1=senang, 2=bersemangat, 3=tertawa
+    private boolean heartReachedGirl; // Bendera untuk memainkan suara pencapaian
+      // Objek permainan
     private Point playerPosition;
     private Point girlPosition;
     private ArrayList<Heart> hearts;
     private Lasso lasso;
     
-    // Random generator
+    // Generator acak
     private Random random;
     
-    // Database manager
+    // Pengelola database
     private DatabaseManager databaseManager;
     
-    // Constructor
+    // Konstruktor
     public GameEngine() {
         random = new Random();
         hearts = new ArrayList<>();
-        
-        // Initialize database manager
+          // Inisialisasi pengelola database
         try {
             databaseManager = DatabaseManager.getInstance();
             if (databaseManager == null) {
-                System.out.println("Warning: Failed to initialize database manager in GameEngine");
+                System.out.println("Peringatan: Gagal menginisialisasi pengelola database di GameEngine");
             } else {
-                System.out.println("Database manager initialized successfully in GameEngine");
+                System.out.println("Pengelola database berhasil diinisialisasi di GameEngine");
             }
         } catch (Exception e) {
-            System.out.println("Error initializing database manager in GameEngine: " + e.getMessage());
+            System.out.println("Kesalahan inisialisasi pengelola database di GameEngine: " + e.getMessage());
             e.printStackTrace();
         }
         
         // Initialize game state
         reset();
     }
-    
-    // Reset game state
+      // Atur ulang status permainan
     public void reset() {
         isRunning = false;
         score = 0;
@@ -72,77 +67,72 @@ public class GameEngine {
         girlFacingRight = true;
         emotionState = 0;
         heartReachedGirl = false;
-        
-        // Initialize player position (left side, middle)
+          // Inisialisasi posisi pemain (sisi kiri, tengah)
         playerPosition = new Point(50, SCREEN_HEIGHT / 2);
         
-        // Initialize girl position (center of screen)
+        // Inisialisasi posisi perempuan (pusat layar)
         girlPosition = new Point(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
         
-        // Clear hearts
+        // Bersihkan hati
         hearts.clear();
         
-        // Reset lasso
+        // Atur ulang laso
         lasso = null;
     }
-    
-    // Start game with username
+      // Mulai permainan dengan nama pengguna
     public void startGame(String username) {
         if (username != null && !username.trim().isEmpty()) {
             currentUsername = username;            
             isRunning = true;
             startTime = System.currentTimeMillis();
-            // Start with fewer hearts
+            // Mulai dengan lebih sedikit hati
             for (int i = 0; i < 3; i++) {
                 spawnHeart();
             }
         }
     }
-    
-    // End game and save result
+      // Akhiri permainan dan simpan hasilnya
     public void endGame() {
         if (isRunning) {
             isRunning = false;
-            System.out.println("\n========== GAME OVER ==========");
-            System.out.println("Final Score: " + score);
-            System.out.println("Hearts Collected: " + heartsCollected);
+            System.out.println("\n========== PERMAINAN BERAKHIR ==========");
+            System.out.println("Skor Akhir: " + score);
+            System.out.println("Hati yang Dikumpulkan: " + heartsCollected);
             
-            // Stop all sounds when game ends
+            // Hentikan semua suara saat permainan berakhir
             try {
                 model.AudioPlayer audioPlayer = model.AudioPlayer.getInstance();
                 if (audioPlayer != null) {
                     audioPlayer.stopAllSounds();
-                    System.out.println("All sounds stopped on game end");
+                    System.out.println("Semua suara dihentikan saat akhir permainan");
                 }
             } catch (Exception e) {
-                System.out.println("Error stopping sounds: " + e.getMessage());
+                System.out.println("Kesalahan menghentikan suara: " + e.getMessage());
             }
-            
-            // Save result to database
+              // Simpan hasil ke database
             if (currentUsername != null && !currentUsername.isEmpty()) {
                 try {
-                    System.out.println("Attempting to save game result to database");
-                    System.out.println("Username: " + currentUsername);
-                    System.out.println("Score: " + score);
-                    System.out.println("Hearts: " + heartsCollected);
+                    System.out.println("Mencoba menyimpan hasil permainan ke database");
+                    System.out.println("Nama pengguna: " + currentUsername);
+                    System.out.println("Skor: " + score);
+                    System.out.println("Hati: " + heartsCollected);
                     
-                    // Always get a fresh instance of the database manager
+                    // Selalu dapatkan instance pengelola database yang baru
                     databaseManager = DatabaseManager.getInstance();
                     
                     if (databaseManager != null) {
-                        // Force initialize database to ensure table exists
+                        // Paksa inisialisasi database untuk memastikan tabel ada
                         databaseManager.initializeDatabase();
                         
                         // Create player result 
                         PlayerResult result = new PlayerResult(currentUsername, score, heartsCollected);
+                          // Debug objek hasil pemain
+                        System.out.println("Objek PlayerResult dibuat:");
+                        System.out.println(" - Nama pengguna: " + result.getUsername());
+                        System.out.println(" - Skor: " + result.getSkor());
+                        System.out.println(" - Hati: " + result.getCount());
                         
-                        // Debug the player result object
-                        System.out.println("Created PlayerResult object:");
-                        System.out.println(" - Username: " + result.getUsername());
-                        System.out.println(" - Score: " + result.getSkor());
-                        System.out.println(" - Hearts: " + result.getCount());
-                        
-                        // Save to database with better error handling
+                        // Simpan ke database dengan penanganan kesalahan yang lebih baik
                         try {
                             System.out.println("Calling savePlayerResult...");
                             databaseManager.savePlayerResult(result);
@@ -163,27 +153,25 @@ public class GameEngine {
             }
             
             System.out.println("============================\n");
-            
-            // Double-check that game state is properly ended
+              // Periksa kembali bahwa status permainan diakhiri dengan benar
             isRunning = false;
         }
     }
     
-    // Update game state (called in game loop)
+    // Perbarui status permainan (dipanggil dalam loop permainan)
     public void update() {
         if (!isRunning) return;
         
-        // Update timer
+        // Perbarui timer
         long currentTime = System.currentTimeMillis();
         timeRemaining = Math.max(0, GAME_DURATION_MS - (currentTime - startTime));
         
-        // Check if time's up
+        // Periksa jika waktunya habis
         if (timeRemaining <= 0) {
             endGame();
             return;
         }
-        
-        // Update emotions based on score
+          // Perbarui emosi berdasarkan skor
         if (score >= 100) {
             emotionState = 3; // Azzam Tertawa
         } else if (score >= 50) {
@@ -194,22 +182,21 @@ public class GameEngine {
             emotionState = 0; // Azzam Berjalan
         }
         
-        // Reset heart reached flag
+        // Atur ulang bendera hati yang mencapai perempuan
         heartReachedGirl = false;
         
         // Update girl facing direction - make her face towards player
-        if (playerPosition.x < girlPosition.x) {
-            girlFacingRight = false; // Player is to the left, girl faces left
+        if (playerPosition.x < girlPosition.x) {            girlFacingRight = false; // Pemain ada di sebelah kiri, perempuan menghadap kiri
         } else {
-            girlFacingRight = true;  // Player is to the right, girl faces right
+            girlFacingRight = true;  // Pemain ada di sebelah kanan, perempuan menghadap kanan
         }
         
-        // Update hearts
+        // Perbarui hati
         for (int i = hearts.size() - 1; i >= 0; i--) {
             Heart heart = hearts.get(i);
             heart.update();
             
-            // Check if heart reached the girl
+            // Periksa jika hati mencapai perempuan
             if (heart.isCaught()) {
                 double dx = girlPosition.x - heart.getPosition().x;
                 double dy = girlPosition.y - heart.getPosition().y;
@@ -220,131 +207,126 @@ public class GameEngine {
                 }
             }
             
-            // Remove hearts that go offscreen
+            // Hapus hati yang keluar layar
             if ((heart.getPosition().x < -50) || (heart.getPosition().x > SCREEN_WIDTH + 50)) {
                 hearts.remove(i);
-                // Only spawn a new heart 50% of the time to reduce heart frequency
+                // Hanya munculkan hati baru 50% dari waktu untuk mengurangi frekuensi hati
                 if (random.nextInt(100) < 50) {
-                    spawnHeart(); // Spawn a new one
+                    spawnHeart(); // Munculkan yang baru
                 }
             }
         }
-        
-        // Update lasso if active
+          // Perbarui laso jika aktif
         if (lasso != null) {
             lasso.update();
             
-            // Check if lasso caught any heart (only if it hasn't already caught one)
+            // Periksa jika laso menangkap hati (hanya jika belum menangkap satu)
             if (!lasso.hasHeartCaught()) {
                 for (Heart heart : hearts) {
-                    if (!heart.isCaught() && lasso.checkCollision(heart.getPosition(), 30)) {                        // Mark this heart as caught
+                    if (!heart.isCaught() && lasso.checkCollision(heart.getPosition(), 30)) {                        // Tandai hati ini sebagai tertangkap
                         heart.setCaught(true);
                         
-                        // Set the lasso reference for the heart
+                        // Tetapkan referensi laso untuk hati
                         heart.setLasso(lasso);
-                          // Calculate points based on heart color
+                          // Hitung poin berdasarkan warna hati
                         int points = heart.getPoints();
                         score += points;
                         
-                        // Only count positive heart types for heartsCollected count
+                        // Hanya hitung jenis hati positif untuk hitungan heartsCollected 
                         if (points > 0) {
                             heartsCollected++;
                         } else {
-                            // For broken hearts, display a message in console
-                            System.out.println("Caught a broken heart! -12 points!");
+                            // Untuk hati yang rusak, tampilkan pesan di konsol
+                            System.out.println("Menangkap hati yang rusak! -12 poin!");
                         }
                         
-                        // Make the lasso start retracting immediately
+                        // Buat laso mulai ditarik kembali segera
                         lasso.catchHeart();
                         
-                        // Only catch one heart per throw
+                        // Hanya tangkap satu hati per lemparan
                         break;
                     }
                 }
             }
-            
-            // Remove lasso if it's done
+              // Hapus laso jika selesai
             if (lasso.isDone()) {
                 lasso = null;
             }
         }
         
-        // Randomly spawn new hearts (reduced frequency)
+        // Secara acak munculkan hati baru (frekuensi dikurangi)
         if (random.nextInt(100) < 1 && hearts.size() < 7) {
             spawnHeart();
         }
-    }    // Spawn a new heart
+    }    // Munculkan hati baru
     private void spawnHeart() {
-        // Determine heart type - with a small chance for a broken heart
+        // Tentukan tipe hati - dengan sedikit kemungkinan untuk hati yang rusak
         int type;
-        if (random.nextInt(100) < 15) { // 15% chance for a broken heart (not too frequent)
-            type = 6; // Broken heart
+        if (random.nextInt(100) < 15) { // 15% kemungkinan hati rusak (tidak terlalu sering)
+            type = 6; // Hati yang rusak
         } else {
-            type = random.nextInt(6); // Normal hearts (0-5)
+            type = random.nextInt(6); // Hati normal (0-5)
         }
-        
-        // Determine spawn position and direction
+          // Tentukan posisi kemunculan dan arah
         boolean fromTop = random.nextBoolean();
         int x, y, speedX;
-        int middleAreaHeight = 200; // Height of middle area to avoid
+        int middleAreaHeight = 200; // Tinggi area tengah untuk dihindari
         int middleAreaTop = (SCREEN_HEIGHT / 2) - (middleAreaHeight / 2);
         
         if (fromTop) {
-            // From top: right to left
+            // Dari atas: kanan ke kiri
             x = SCREEN_WIDTH + 30;
             
-            // Spawn in top third of screen, avoid middle area
-            y = random.nextInt(middleAreaTop - 100) + 50; // Keep hearts higher up
+            // Muncul di sepertiga atas layar, hindari area tengah
+            y = random.nextInt(middleAreaTop - 100) + 50; // Jaga hati tetap lebih tinggi
             
             speedX = -random.nextInt(HEART_SPEED_MAX - HEART_SPEED_MIN + 1) - HEART_SPEED_MIN;
         } else {
-            // From bottom: left to right
+            // Dari bawah: kiri ke kanan
             x = -30;
             
-            // Spawn in bottom third of screen, avoid middle area
-            y = random.nextInt(middleAreaTop - 100) + middleAreaTop + middleAreaHeight; // Keep hearts lower down
+            // Muncul di sepertiga bawah layar, hindari area tengah
+            y = random.nextInt(middleAreaTop - 100) + middleAreaTop + middleAreaHeight; // Jaga hati tetap lebih rendah
             
             speedX = random.nextInt(HEART_SPEED_MAX - HEART_SPEED_MIN + 1) + HEART_SPEED_MIN;
-        }
-          // Create heart with appropriate points based on type
+        }          // Buat hati dengan poin yang sesuai berdasarkan tipe
         int points;
         switch (type) {
-            case 0: points = 3; break; // Blue
-            case 1: points = 4; break; // Green
-            case 2: points = 5; break; // Yellow
-            case 3: points = 6; break; // Red
-            case 4: points = 7; break; // Orange
-            case 5: points = 2; break; // Purple
-            case 6: points = -12; break; // Broken heart - negative points
+            case 0: points = 3; break; // Biru
+            case 1: points = 4; break; // Hijau
+            case 2: points = 5; break; // Kuning
+            case 3: points = 6; break; // Merah
+            case 4: points = 7; break; // Oranye
+            case 5: points = 2; break; // Ungu
+            case 6: points = -12; break; // Hati rusak - poin negatif
             default: points = 2; break; // Default fallback
         }
         
-        System.out.println("Spawning heart at position: (" + x + ", " + y + ")");
+        System.out.println("Memunculkan hati pada posisi: (" + x + ", " + y + ")");
         hearts.add(new Heart(new Point(x, y), speedX, type, points));
     }
-    
-    // Throw lasso at target point
+      // Lempar laso ke titik target
     public void throwLasso(Point target) {
         if (isRunning && lasso == null) {
             lasso = new Lasso(new Point(playerPosition.x, playerPosition.y), target);
         }
     }
     
-    // Move player
+    // Pindahkan pemain
     public void movePlayer(int dx, int dy) {
         if (isRunning) {
-            // Update player position with bounds checking
+            // Perbarui posisi pemain dengan pemeriksaan batas
             int newX = playerPosition.x + dx * PLAYER_SPEED;
             int newY = playerPosition.y + dy * PLAYER_SPEED;
             
-            // Update facing direction
+            // Perbarui arah menghadap
             if (dx > 0) {
                 facingRight = true;
             } else if (dx < 0) {
                 facingRight = false;
             }
             
-            // Ensure player stays within screen bounds
+            // Pastikan pemain tetap dalam batas layar
             newX = Math.max(20, Math.min(SCREEN_WIDTH - 50, newX));
             newY = Math.max(20, Math.min(SCREEN_HEIGHT - 50, newY));
             
@@ -352,19 +334,18 @@ public class GameEngine {
             playerPosition.y = newY;
         }
     }
-    
-    // Setter methods for continuing a game with previous score
+      // Metode setter untuk melanjutkan permainan dengan skor sebelumnya
     public void setScore(int score) {
-        System.out.println("Setting score to: " + score);
+        System.out.println("Mengatur skor ke: " + score);
         this.score = score;
     }
     
     public void setHeartsCollected(int heartsCollected) {
-        System.out.println("Setting hearts collected to: " + heartsCollected);
+        System.out.println("Mengatur hati yang dikumpulkan ke: " + heartsCollected);
         this.heartsCollected = heartsCollected;
     }
     
-    // Getters
+    // Getter
     public boolean isRunning() {
         return isRunning;
     }
@@ -414,16 +395,15 @@ public class GameEngine {
     public boolean isGirlFacingRight() {
         return girlFacingRight;
     }
-    
-    // Inner class for Heart objects - changed from class-level to public visibility
+      // Kelas dalam untuk objek Hati - diubah dari tingkat kelas ke visibilitas publik
     public class Heart {
         private Point position;
-        private int type; // 0=blue, 1=green, 2=orange, 3=yellow, 4=purple, 5=red
+        private int type; // 0=biru, 1=hijau, 2=oranye, 3=kuning, 4=ungu, 5=merah
         private int speedX;
         private int points;
         private boolean isCaught;
-        private boolean returnedToPlayer; // Flag to track if heart has reached player
-        private Lasso lasso; // Reference to the lasso that caught this heart
+        private boolean returnedToPlayer; // Bendera untuk melacak jika hati telah mencapai pemain
+        private Lasso lasso; // Referensi ke laso yang menangkap hati ini
         
         public Heart(Point position, int speedX, int type, int points) {
             this.position = position;

@@ -7,79 +7,74 @@ import java.io.File;
 public class DatabaseManager {
     private Connection connection;
     private PreparedStatement statement;
-    private static DatabaseManager instance;
-
-    // Constructor - private for Singleton pattern
+    private static DatabaseManager instance;    // Konstruktor - private untuk pola Singleton
     private DatabaseManager() {
-        try {
-            // Check if the MySQL connector JAR exists
+        try {            // Memeriksa apakah file JAR MySQL connector ada
             File jarFile = new File("lib/mysql-connector-j-9.2.0.jar");
             if (!jarFile.exists()) {
-                System.out.println("Warning: MySQL connector JAR not found at: " + jarFile.getAbsolutePath());
-                System.out.println("Checking classpath...");
+                System.out.println("Peringatan: MySQL connector JAR tidak ditemukan di: " + jarFile.getAbsolutePath());
+                System.out.println("Memeriksa classpath...");
             }
             
-            // Explicitly load the MySQL JDBC driver
+            // Memuat JDBC driver MySQL secara eksplisit
             try {
                 Class.forName("com.mysql.cj.jdbc.Driver");
-                System.out.println("MySQL JDBC driver loaded successfully!");
+                System.out.println("MySQL JDBC driver berhasil dimuat!");
             } catch (ClassNotFoundException e) {
-                System.out.println("ERROR: MySQL JDBC driver not found in classpath.");
-                System.out.println("Please make sure mysql-connector-j-9.2.0.jar is properly added to your project dependencies.");
+                System.out.println("ERROR: MySQL JDBC driver tidak ditemukan dalam classpath.");
+                System.out.println("Pastikan mysql-connector-j-9.2.0.jar telah ditambahkan dengan benar ke dependensi proyek Anda.");
                 e.printStackTrace();
-                return; // Exit constructor since we can't continue without the driver
+                return; // Keluar dari konstruktor karena tidak dapat melanjutkan tanpa driver
             }
-            
-            // Try to establish connection
+              // Mencoba menjalin koneksi
             try {
-                // First, check if server is reachable
+                // Pertama, periksa apakah server dapat dijangkau
                 Connection serverConn = DriverManager.getConnection("jdbc:mysql://localhost:3306/", "root", "");
-                System.out.println("Connected to MySQL server successfully!");
+                System.out.println("Berhasil terhubung ke server MySQL!");
                 
-                // Create database if it doesn't exist
+                // Buat database jika belum ada
                 Statement stmt = serverConn.createStatement();
                 stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS azzam_love_db");
                 
-                // Close server connection
+                // Tutup koneksi server
                 stmt.close();
                 serverConn.close();
                 
-                // Connect to the specific database
+                // Hubungkan ke database tertentu
                 connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/azzam_love_db", "root", "");
-                System.out.println("Database connection established successfully to azzam_love_db");
+                System.out.println("Koneksi database berhasil dibuat ke azzam_love_db");
             } catch (SQLException e) {
-                System.out.println("Database connection error: " + e.getMessage());
-                System.out.println("Please ensure your MySQL server is running and accessible.");
+                System.out.println("Kesalahan koneksi database: " + e.getMessage());
+                System.out.println("Pastikan server MySQL Anda berjalan dan dapat diakses.");
                 e.printStackTrace();
             }
         } catch (Exception e) {
             System.out.println("Unexpected error in DatabaseManager: " + e.getMessage());
             e.printStackTrace();
         }
-    }    // Singleton pattern to ensure only one database connection
+    }    // Pola Singleton untuk memastikan hanya ada satu koneksi database
     public static synchronized DatabaseManager getInstance() {
         if (instance == null) {
             instance = new DatabaseManager();
         } else {
-            // Check if connection is still alive
+            // Periksa apakah koneksi masih aktif
             try {
                 if (instance.connection == null || instance.connection.isClosed()) {
-                    System.out.println("Database connection was closed, creating a new one");
+                    System.out.println("Koneksi database telah ditutup, membuat yang baru");
                     instance = new DatabaseManager();
                 }
             } catch (SQLException e) {
-                System.out.println("Error checking database connection: " + e.getMessage());
-                // Try to create a new instance
+                System.out.println("Kesalahan memeriksa koneksi database: " + e.getMessage());
+                // Coba buat instance baru
                 instance = new DatabaseManager();
             }
         }
         return instance;
     }
-    
-    // Create table if not exists
+      // Buat tabel jika belum ada
     public void initializeDatabase() {
         if (connection == null) {
-            System.out.println("Cannot initialize database - no connection available");
+            System.out.println("Tidak dapat menginisialisasi database - tidak ada koneksi tersedia");
             return;
         }
         
@@ -91,19 +86,17 @@ public class DatabaseManager {
                     ")";
             statement = connection.prepareStatement(createTableSQL);
             statement.executeUpdate();
-            System.out.println("Database table initialized successfully");
+            System.out.println("Tabel database berhasil diinisialisasi");
         } catch (SQLException e) {
-            System.out.println("Error initializing database: " + e.getMessage());
+            System.out.println("Kesalahan inisialisasi database: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    // Get all player results
+    }    // Dapatkan semua hasil pemain
     public ArrayList<PlayerResult> getAllResults() {
         ArrayList<PlayerResult> results = new ArrayList<>();
         
         if (connection == null) {
-            System.out.println("Cannot get results - no connection available");
+            System.out.println("Tidak dapat mendapatkan hasil - tidak ada koneksi tersedia");
             return results;
         }
         
@@ -125,16 +118,16 @@ public class DatabaseManager {
         }
         
         return results;
-    }    // Save player result (insert new or update if exists)
+    }    // Simpan hasil pemain (masukkan yang baru atau perbarui jika sudah ada)
     public void savePlayerResult(PlayerResult playerResult) {
         if (connection == null) {
-            System.out.println("Cannot save result - no connection available, trying to reconnect...");
+            System.out.println("Tidak dapat menyimpan hasil - tidak ada koneksi tersedia, mencoba untuk terhubung kembali...");
             try {
-                // Try to reconnect
+                // Coba terhubung kembali
                 connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/azzam_love_db", "root", "");
-                System.out.println("Reconnected to database successfully");
+                System.out.println("Berhasil terhubung kembali ke database");
             } catch (SQLException reconnectEx) {
-                System.out.println("Failed to reconnect to database: " + reconnectEx.getMessage());
+                System.out.println("Gagal terhubung kembali ke database: " + reconnectEx.getMessage());
                 return;
             }
         }
@@ -142,31 +135,28 @@ public class DatabaseManager {
         try {
             // Make sure the table exists
             initializeDatabase();
-            
-            // Print debugging information
-            System.out.println("===== DATABASE SAVE OPERATION =====");
-            System.out.println("Saving player: " + playerResult.getUsername());
-            System.out.println("Score: " + playerResult.getSkor());
-            System.out.println("Hearts: " + playerResult.getCount());
-            
-            // Check if username already exists
+              // Cetak informasi debugging
+            System.out.println("===== OPERASI PENYIMPANAN DATABASE =====");
+            System.out.println("Menyimpan pemain: " + playerResult.getUsername());
+            System.out.println("Skor: " + playerResult.getSkor());
+            System.out.println("Hati: " + playerResult.getCount());
+              // Periksa apakah username sudah ada
             String checkQuery = "SELECT * FROM thasil WHERE username = ?";
             statement = connection.prepareStatement(checkQuery);
             statement.setString(1, playerResult.getUsername());
             ResultSet rs = statement.executeQuery();
             
             if (rs.next()) {
-                // Get existing score and hearts
+                // Dapatkan skor dan hati yang ada
                 int existingSkor = rs.getInt("skor");
                 int existingHearts = rs.getInt("count");
+                  System.out.println("Pemain sudah ada dalam database");
+                System.out.println("Skor yang ada: " + existingSkor);
+                System.out.println("Hati yang ada: " + existingHearts);
                 
-                System.out.println("Player already exists in database");
-                System.out.println("Existing score: " + existingSkor);
-                System.out.println("Existing hearts: " + existingHearts);
-                
-                // Only update if new score is higher
+                // Hanya perbarui jika skor baru lebih tinggi
                 if (playerResult.getSkor() > existingSkor) {
-                    // Update existing record with higher score
+                    // Perbarui catatan yang ada dengan skor yang lebih tinggi
                     String updateQuery = "UPDATE thasil SET skor = ?, count = ? WHERE username = ?";
                     statement = connection.prepareStatement(updateQuery);
                     statement.setInt(1, playerResult.getSkor());
@@ -174,16 +164,15 @@ public class DatabaseManager {
                     statement.setString(3, playerResult.getUsername());
                     
                     int rowsAffected = statement.executeUpdate();
-                    System.out.println("Updated record! Rows affected: " + rowsAffected);
-                    System.out.println("Updated player record: " + playerResult.getUsername() + 
-                                    " with higher score: " + playerResult.getSkor() + 
-                                    " (previous: " + existingSkor + ")");
+                    System.out.println("Catatan diperbarui! Baris yang terpengaruh: " + rowsAffected);
+                    System.out.println("Memperbarui catatan pemain: " + playerResult.getUsername() + 
+                                    " dengan skor lebih tinggi: " + playerResult.getSkor() + 
+                                    " (sebelumnya: " + existingSkor + ")");
                 } else {
-                    // No update needed
-                    System.out.println("No update needed - current score is better");
-                }
-            } else {
-                // Insert new record
+                    // Tidak perlu pembaruan
+                    System.out.println("Tidak perlu pembaruan - skor saat ini lebih baik");
+                }            } else {
+                // Masukkan catatan baru
                 String insertQuery = "INSERT INTO thasil (username, skor, count) VALUES (?, ?, ?)";
                 statement = connection.prepareStatement(insertQuery);
                 statement.setString(1, playerResult.getUsername());
@@ -191,18 +180,17 @@ public class DatabaseManager {
                 statement.setInt(3, playerResult.getCount());
                 
                 int rowsAffected = statement.executeUpdate();
-                System.out.println("New record created! Rows affected: " + rowsAffected);
-                System.out.println("Inserted new player record: " + playerResult.getUsername() + 
-                                " with score: " + playerResult.getSkor());
+                System.out.println("Catatan baru dibuat! Baris yang terpengaruh: " + rowsAffected);
+                System.out.println("Memasukkan catatan pemain baru: " + playerResult.getUsername() + 
+                                " dengan skor: " + playerResult.getSkor());
             }
-            System.out.println("===== DATABASE OPERATION COMPLETED =====");
+            System.out.println("===== OPERASI DATABASE SELESAI =====");
         } catch (SQLException e) {
             System.out.println("Error saving player result: " + e.getMessage());
             e.printStackTrace();
         }
     }
-    
-    // Close connection on application exit
+      // Tutup koneksi saat aplikasi keluar
     public void closeConnection() {
         try {
             if (statement != null) {
@@ -210,10 +198,10 @@ public class DatabaseManager {
             }
             if (connection != null) {
                 connection.close();
-                System.out.println("Database connection closed");
+                System.out.println("Koneksi database ditutup");
             }
         } catch (SQLException e) {
-            System.out.println("Error closing connection: " + e.getMessage());
+            System.out.println("Kesalahan menutup koneksi: " + e.getMessage());
             e.printStackTrace();
         }
     }

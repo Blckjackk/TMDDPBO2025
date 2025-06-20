@@ -3,3 +3,7 @@ javac view\*.java
 javac viewmodel\*.java
 javac Main.java
 java -cp .;lib\mysql-connector-j-9.2.0.jar Main
+
+
+HAPUS .class
+del /s *.class
