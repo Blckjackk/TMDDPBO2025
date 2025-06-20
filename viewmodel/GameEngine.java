@@ -433,16 +433,13 @@ public class GameEngine {
         public void setCaught(boolean caught) {
             isCaught = caught;
         }
-    }
-    
-    // Inner class for Lasso object
+    }    // Inner class for Lasso object
     public class Lasso {
         private Point startPosition;
         private Point targetPosition;
         private Point currentPosition;
         private boolean extending;
         private boolean retracting;
-        private int lifetime;
         
         public Lasso(Point startPosition, Point targetPosition) {
             this.startPosition = new Point(startPosition);
@@ -450,11 +447,11 @@ public class GameEngine {
             this.currentPosition = new Point(startPosition);
             this.extending = true;
             this.retracting = false;
-            this.lifetime = 0;
         }
-        
-        public void update() {
-            lifetime++;
+          public void update() {
+            // Update start position to follow player
+            startPosition.x = playerPosition.x;
+            startPosition.y = playerPosition.y;
             
             if (extending) {
                 // Move toward target position - FASTER SPEED
@@ -475,7 +472,7 @@ public class GameEngine {
                     retracting = true;
                 }
             } else if (retracting) {
-                // Move back to start position - FASTER SPEED
+                // Move back to current player position (not original start position)
                 double dx = startPosition.x - currentPosition.x;
                 double dy = startPosition.y - currentPosition.y;
                 double distance = Math.sqrt(dx * dx + dy * dy);
