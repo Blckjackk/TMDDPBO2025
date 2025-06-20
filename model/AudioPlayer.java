@@ -41,16 +41,16 @@ public class AudioPlayer {
             System.out.println("===== LOADING GAME SOUNDS =====");
             
             // Suara game start
-            loadSound(GAME_START_SOUND, "assets/sound game start.mp3");
+            loadSound(GAME_START_SOUND, "assets/sound game start.wav");
             
             // Suara ingame (background music)
-            loadSound(INGAME_SOUND, "assets/sound ingame.mp3");
+            loadSound(INGAME_SOUND, "assets/sound ingame.wav");
             
             // Suara achievement
-            loadSound(ACHIEVEMENT_SOUND, "assets/sound achivement.mp3");
+            loadSound(ACHIEVEMENT_SOUND, "assets/sound achivement.wav");
             
             // Suara perubahan karakter
-            loadSound(CHARACTER_CHANGE_SOUND, "assets/sound berubah.mp3");
+            loadSound(CHARACTER_CHANGE_SOUND, "assets/sound berubah.wav");
             
             System.out.println("===== SOUND LOADING COMPLETED =====");
         } catch (Exception e) {
@@ -324,6 +324,98 @@ public class AudioPlayer {
             } catch (Exception e) {
                 System.out.println("WAV playback error: " + e.getMessage());
             }
+        }
+        
+        /**
+         * Khusus untuk musik in-game, putar sekali dan otomatis replay ketika selesai
+         */
+        public void playAndRestart() {
+            // Hentikan pemutaran yang sedang berjalan
+            stop();
+            
+            isPlaying = true;
+            isLooping = false; // Not true looping, we'll control restart manually
+            
+            playThread = new Thread(() -> {
+                try {
+                    // Keep playing the file as long as isPlaying is true
+                    while (isPlaying) {
+                        playFileWithAutoRestart(filePath);
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error in playAndRestart: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+            playThread.start();
+        }
+        
+        // Putar file WAV dengan auto-restart ketika selesai
+        private void playFileWithAutoRestart(String filePath) {
+            try {
+                AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new File(filePath));
+                Clip clip = AudioSystem.getClip();
+                clip.open(audioInputStream);
+                
+                // Use a semaphore to wait for the clip to finish
+                Object lock = new Object();
+                
+                clip.addLineListener(event -> {
+                    if (event.getType() == LineEvent.Type.STOP) {
+                        synchronized (lock) {
+                            lock.notify(); // Notify that clip has stopped
+                        }
+                        clip.close();
+                    }
+                });
+                
+                // Start playing
+                clip.start();
+                System.out.println("Playing in-game music once...");
+                
+                // Wait for the clip to finish
+                synchronized (lock) {
+                    try {
+                        lock.wait(); // Wait for notification from LineListener
+                    } catch (InterruptedException e) {
+                        System.out.println("Playback interrupted");
+                        return; // Exit if interrupted
+                    }
+                }
+                
+                // If we get here, the clip has finished naturally
+                System.out.println("Music finished, restarting...");
+                
+                // Small delay to prevent potential issues
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+                
+                // The while loop in playAndRestart will call this method again
+            } catch (Exception e) {
+                System.out.println("Error in playFileWithAutoRestart: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Khusus untuk musik in-game, putar sekali dan otomatis replay ketika selesai
+     */
+    public void playInGameMusic() {
+        if (!soundEnabled) return;
+        
+        try {
+            Sound sound = sounds.get(INGAME_SOUND);
+            if (sound != null) {
+                sound.playAndRestart();
+                System.out.println("Playing in-game music with auto-restart");
+            } else {
+                System.out.println("In-game sound not found");
+            }
+        } catch (Exception e) {
+            System.out.println("Error playing in-game music: " + e.getMessage());
         }
     }
 }

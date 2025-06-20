@@ -74,10 +74,9 @@ public class GamePanel extends JPanel implements ActionListener {
         // Start game timer
         gameTimer = new Timer(1000 / FPS, this);
         gameTimer.start();
-        
-        // Play start sound and background music
+          // Play start sound and background music
         playSound("game_start");
-        loopSound("ingame");
+        playInGameMusic();
     }
     
     private void loadImages() {
@@ -252,10 +251,9 @@ public class GamePanel extends JPanel implements ActionListener {
             System.out.println("Error in stopAllSounds: " + e.getMessage());
         }
     }
-    
-    private void playBackgroundMusic() {
-        // Use AudioPlayer to loop the background music
-        loopSound("ingame");
+      private void playBackgroundMusic() {
+        // Use AudioPlayer to play the background music (play once and auto-restart)
+        playInGameMusic();
     }
     
     private void stopBackgroundMusic() {
@@ -507,6 +505,22 @@ public class GamePanel extends JPanel implements ActionListener {
             // Refresh scores and show menu
             mainMenuView.refreshScores();
             mainMenuView.setVisible(true);
+        }
+    }
+    
+    // Helper method to play in-game music (play once and restart when finished)
+    private void playInGameMusic() {
+        try {
+            System.out.println("GamePanel: Playing in-game music with auto-restart");
+            AudioPlayer audioPlayer = AudioPlayer.getInstance();
+            if (audioPlayer != null) {
+                audioPlayer.playInGameMusic();
+            } else {
+                System.out.println("ERROR: AudioPlayer instance is null");
+            }
+        } catch (Exception e) {
+            System.out.println("Error in playInGameMusic: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
